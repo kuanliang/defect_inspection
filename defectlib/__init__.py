@@ -9,3 +9,4 @@ from .DataIO     import *
 from .Config import *
 from .Transform import *
 from .imutils import *
+from .Display import *

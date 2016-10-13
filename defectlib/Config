@@ -11,3 +11,11 @@ TP_defect = {'2': angle2_shape,
              '9': angle9_shape}
 
 imageShapeDict = {'tp': TP_defect}
+
+
+image_angle = {'2': 90,
+               '6': 270,
+               '8': 0,
+               '9': 0}
+               
+               

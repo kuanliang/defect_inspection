@@ -1,8 +1,8 @@
 
 
-angle2_shape = {'width': 122, 'height': 221}
+angle2_shape = {'width': 234, 'height': 117}
 angle6_shape = {'width': 125, 'height': 243}
-angle8_shape = {'width': 234, 'height': 117}
+angle8_shape = {'widht': 234, 'height': 117}
 angle9_shape = {'width': 223, 'height': 105}
 
 TP_defect = {'2': angle2_shape,
@@ -11,3 +11,10 @@ TP_defect = {'2': angle2_shape,
              '9': angle9_shape}
 
 imageShapeDict = {'tp': TP_defect}
+
+
+image_angle = {'2': 90,
+               '6': 270,
+               '8': 0,
+               '9': 0}
+               
