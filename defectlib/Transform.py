@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import pickle
+import cv2
+from imutils import rotate
 
 def make_arrays(nb_rows, angle):
     '''initialize empty numpy arrays for dataset and labels 
@@ -40,7 +42,7 @@ def merge_datasets(pickle_folder):
     labelFinal = np.concatenate(labelList)
     return tensorFinal, labelFinal
     
-def align_tensor(tensors, angle, width=255):
+def align_tensor(tensor, angle, width=255):
     '''align and resize the tensor to univeral (255*255) scale
     
     Notes: 
@@ -53,7 +55,17 @@ def align_tensor(tensors, angle, width=255):
         return a tensor with resized and angle adjusted angle
     
     '''
+    # initialize an empty numpy array for storing image arrays
+    empty_tensor = np.ndarray((tensor.shape[0], width, width))
     
+    for index, image in enumerate(tensor):
+        resized_image = cv2.resize(image, (width, width))
+        rotated_image = rotate(resized_image, angle)
+        
+        empty_tensor[index,:,:] = rotated_image
+        
+    return empty_tensor 
+        
     
     
     
