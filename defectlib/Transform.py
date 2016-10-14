@@ -82,7 +82,33 @@ def tensor_to_matrix(tensor):
     return tensor.reshape(tensor.shape[0], tensor.shape[1] * tensor.shape[2])
     
     
+def combine_shuffle_tensors(*tensorLabels):
+    '''
+    '''
+    tensorList = []
+    labelList = []
+    
+    tensor_length = 0
+    
+    for tensor, label in tensorLabels:
+        tensor_length += tensor.shape[0]
+    
+    print 'the final tensor should be {}'.format(tensor_length)
+    
+    height = tensor.shape[1]
+    width = tensor.shape[2]
+    # initialize empth tensor and label
+    # combined_tensor = np.ndarray(shape=(tensor_length, height, width), dtype=np.float32)
+    # combined_label = np.ndarray(tensor_length, dtype=int)
+    
+    for tensor, label in tensorLabels:
+        tensorList.append(tensor)
+        labelList.append(label)
+    
+    final_tensor = np.concatenate(tensorList)
+    final_label = np.concatenate(labelList)
     
     
+    return final_tensor, final_label
     
     
