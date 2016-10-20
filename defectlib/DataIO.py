@@ -109,4 +109,69 @@ def maybe_pickle(defect_folder, force=False):
                                     pickle.dump(dataset, f, pickle.HIGHEST_PROTOCOL)
                             except Exception as e:
                                 print('Unable to save data to', pickleName, ':', e)
+                                
+                                
+
+
+def create_localTensors(path_to_local):
+    '''create tensors for localizers
+    
+    Notes:
+    
+    Args:
+    
+    Return:
+    
+    '''
+    
+    # read in the coordinate information with Pandas
+    pathToCoor = os.path.join(path_to_local, 'For_Andy', 'Data.txt')
+    coorDf = pd.read_csv(pathToCoor, names=['file_name', 'coordinate'], sep='\t')
+    coorDf['file_name'] = [os.path.splitext(x)[0] for x in coorDf['file_name']]    
+    
+    # return coorDf
+    # return coorDf
+    # initialize a tensorList and labelist
+    tensorList = []
+    labelList = []
+    
+    
+    # return coorDf
+    # loop through images and store them into numpy array
+    for img_file in os.listdir(path_to_local):
+        print img_file
+        if os.path.splitext(img_file)[1] == '.jp2':
+            rgb_image = cv2.imread(os.path.join(path_to_local, img_file))
+            gray_image = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2GRAY)
+            # print img_file
+            # return rgb_image
+            # print img_file
+            # print gray_image.shape
+            tensorList.append(gray_image)
+            
+            # extract coordinate information (top_left_x, top_left_y, right_bottom_x, right_bottom_y)
+            # try:
+            
+            image_main = os.path.splitext(os.path.splitext(img_file)[0])[0]
+            # print image_main
+            coordinate_tuple = coorDf[coorDf['file_name'] == image_main]['coordinate'].values[0].split()
+            
+            # print coordinate_tuple
+            # except:
+            # print "can't access coordinate infor from coordinate dataframe"
                 
+            labelList.append(coordinate_tuple)
+    
+    # return tensorList
+    
+    # tensorFinal = np.concatenate(tensorList)
+    # labelFinal = np.concatenate(labelList)
+    dataset = np.ndarray((len(tensorList), tensorList[0].shape[0], tensorList[0].shape[1]), dtype=np.float32)
+    labels = np.ndarray((len(tensorList), 4), dtype=np.int32)
+    for index, tensor in enumerate(tensorList):
+        dataset[index,:,:] = tensor
+        labels[index,:] = labelList[index]
+        
+        
+    return dataset, labels
+              

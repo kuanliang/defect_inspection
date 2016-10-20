@@ -6,6 +6,28 @@ from imutils import rotate
 
 import Config
 
+
+def randomize(tensor, labels):
+    '''shuffle the tensor and its labels
+    
+    Notes:
+    
+    Args:
+        tensor:
+        labels: 
+    
+    Return:
+        shuffled_tensor:
+        shuffled_labels:
+    
+    '''
+    permutation = np.random.permutation(labels.shape[0])
+    shuffled_tensor = tensor[permutation,:,:]
+    shuffled_labels = labels[permutation]
+    
+    return shuffled_tensor, shuffled_labels
+
+
 def make_arrays(nb_rows, angle):
     '''initialize empty numpy arrays for dataset and labels 
     
@@ -45,7 +67,7 @@ def align_tensor(tensor, angle, width=255):
     return empty_tensor 
 
 
-def merge_datasets(pickle_folder):
+def merge_datasets(pickle_folder, width=256):
     '''
     
     '''
@@ -63,7 +85,7 @@ def merge_datasets(pickle_folder):
             try:
                 with open(os.path.join(pickle_folder, pickleFile), 'rb') as f:
                     tensor = pickle.load(f)
-                    tensorList.append(align_tensor(tensor, Config.image_angle[angle]))
+                    tensorList.append(align_tensor(tensor, Config.image_angle[angle], width=width))
                     print tensor.shape[0]
                     labels = np.ndarray(tensor.shape[0], dtype=int)
                     labels[0:tensor.shape[0]] = int(label)
@@ -83,7 +105,14 @@ def tensor_to_matrix(tensor):
     
     
 def combine_shuffle_tensors(*tensorLabels):
-    '''
+    '''combine different tensors and shuffle them
+    
+    Notes:
+    
+    Args:
+    
+    Return:
+    
     '''
     tensorList = []
     labelList = []
@@ -108,7 +137,8 @@ def combine_shuffle_tensors(*tensorLabels):
     final_tensor = np.concatenate(tensorList)
     final_label = np.concatenate(labelList)
     
+    shuffled_tensor, shuffled_label = randomize(final_tensor, final_label)
     
-    return final_tensor, final_label
+    return shuffled_tensor, shuffled_label
     
     
