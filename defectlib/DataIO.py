@@ -1,5 +1,6 @@
 from scipy import ndimage
 import numpy as np
+import pandas as pd
 import pickle
 import cv2
 import os
@@ -113,7 +114,7 @@ def maybe_pickle(defect_folder, force=False):
                                 
 
 
-def create_localTensors(path_to_local):
+def create_localTensors(path_to_local, gray=True):
     '''create tensors for localizers
     
     Notes:
@@ -139,7 +140,7 @@ def create_localTensors(path_to_local):
     # return coorDf
     # loop through images and store them into numpy array
     for img_file in os.listdir(path_to_local):
-        print img_file
+        # print img_file
         if os.path.splitext(img_file)[1] == '.jp2':
             rgb_image = cv2.imread(os.path.join(path_to_local, img_file))
             gray_image = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2GRAY)
@@ -147,8 +148,10 @@ def create_localTensors(path_to_local):
             # return rgb_image
             # print img_file
             # print gray_image.shape
-            tensorList.append(gray_image)
-            
+            if gray == True:
+                tensorList.append(gray_image)
+            else:
+                tensorList.append(rgb_image)
             # extract coordinate information (top_left_x, top_left_y, right_bottom_x, right_bottom_y)
             # try:
             
@@ -166,12 +169,26 @@ def create_localTensors(path_to_local):
     
     # tensorFinal = np.concatenate(tensorList)
     # labelFinal = np.concatenate(labelList)
-    dataset = np.ndarray((len(tensorList), tensorList[0].shape[0], tensorList[0].shape[1]), dtype=np.float32)
-    labels = np.ndarray((len(tensorList), 4), dtype=np.int32)
+    if gray == True:
+        dataset = np.ndarray((len(tensorList), tensorList[0].shape[0], tensorList[0].shape[1]), dtype=np.float32)    
+    else:
+        dataset = np.ndarray((len(tensorList), tensorList[0].shape[0], tensorList[0].shape[1], 3), dtype=np.uint8) 
+    labels = np.ndarray((len(tensorList), 4), dtype=np.float32)
+    
+    # get width and height of the image
+    width = tensorList[0].shape[1]
+    height = tensorList[0].shape[0]
+    print width
+    print height
+    
     for index, tensor in enumerate(tensorList):
-        dataset[index,:,:] = tensor
-        labels[index,:] = labelList[index]
-        
+        if gray == True:
+            dataset[index,:,:] = tensor
+        else:
+            dataset[index,:,:,:] = tensor
+        # print labelList[index]
+        # print np.array([width, height, width, height], dtype=np.float32)
+        # labels[index,:] = np.array([float(i) for i in labelList[index]], dtype=np.float32) / np.array([width, height, width, height], dtype=np.float32) 
+        labels[index,:] = np.array(labelList[index])
         
     return dataset, labels
-              
