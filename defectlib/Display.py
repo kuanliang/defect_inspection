@@ -41,11 +41,12 @@ def display_localTensor(tensor, label):
     
     plt.figure(figsize=(15, 7))
     
-    for index, tensor_index in enumerate(np.random.permutation(9)):
-        img_rec = cv2.rectangle(tensor[tensor_index], tuple(label[tensor_index][0:2]), tuple(label[tensor_index][2:4]), (255, 0, 0), 10)
-        plt.subplot(3, 3, index+1)
-        plt.axis('off')
-        plt.imshow(img_rec)
-        
-    
-    
+    tensor_num = tensor.shape[0]
+    for index, tensor_index in enumerate(np.random.permutation(tensor_num)):
+        if index < 9:
+            img_rec = tensor[tensor_index].copy()
+            cv2.rectangle(img_rec, tuple(label[tensor_index][0:2]), tuple(label[tensor_index][2:4]), (255, 0, 0), 10)
+            plt.subplot(3, 3, index+1)
+            plt.axis('off')
+            plt.title('index {}'.format(tensor_index))
+            plt.imshow(img_rec, cmap='gray')

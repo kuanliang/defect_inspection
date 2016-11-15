@@ -9,30 +9,30 @@ import Config
 
 def randomize(tensor, labels):
     '''shuffle the tensor and its labels
-    
+
     Notes:
-    
+
     Args:
         tensor:
-        labels: 
-    
+        labels:
+
     Return:
         shuffled_tensor:
         shuffled_labels:
-    
+
     '''
     permutation = np.random.permutation(labels.shape[0])
     shuffled_tensor = tensor[permutation,:,:]
     shuffled_labels = labels[permutation]
-    
+
     return shuffled_tensor, shuffled_labels
 
 
 def make_arrays(nb_rows, angle):
-    '''initialize empty numpy arrays for dataset and labels 
-    
-    
-    
+    '''initialize empty numpy arrays for dataset and labels
+
+
+
     '''
     if nb_rows:
         dataset = np.ndarray((nb_rows, img_height[angle], img_width[angle]), dtype=np.float32)
@@ -44,32 +44,38 @@ def make_arrays(nb_rows, angle):
 
 def align_tensor(tensor, angle, width=255):
     '''align and resize the tensor to univeral (255*255) scale
-    
-    Notes: 
-    
+
+    Notes:
+
     Args:
         tensor: tensor
         angle: angle
-    
+
     Return:
         return a tensor with resized and angle adjusted angle
-    
+
     '''
     # initialize an empty numpy array for storing image arrays
     empty_tensor = np.ndarray((tensor.shape[0], width, width))
-    
+
     for index, image in enumerate(tensor):
         resized_image = cv2.resize(image, (width, width))
         rotated_image = rotate(resized_image, angle)
-        
+
         empty_tensor[index,:,:] = rotated_image
-        
-    return empty_tensor 
+
+    return empty_tensor
 
 
-def merge_datasets(pickle_folder, width=256):
-    '''
+def load_tensors(pickle_folder, width=256):
+    '''load images as tensors from specified angle folder
     
+    Note:
+    
+    Args:
+    
+    Return:
+
     '''
     tensorList = []
     labelList = []
@@ -77,68 +83,95 @@ def merge_datasets(pickle_folder, width=256):
         # print label
         # print pickleFile
         if pickleFile.endswith('pickle'):
-            print pickleFile
+            defect_loc = os.path.splitext(pickleFile)[0].split('_')[0]
+            # print pickleFile
             label = int(os.path.splitext(pickleFile)[0].split('_')[-1].replace('c', ''))
-            print label
-            angle = os.path.splitext(pickleFile)[0].split('_')[1].replace('a', '')
-            print angle
+            # print label
+            camera_angle = os.path.splitext(pickleFile)[0].split('_')[1].replace('a', '')
+            # print angle
             try:
                 with open(os.path.join(pickle_folder, pickleFile), 'rb') as f:
+                    # print 'path: {}'.format(os.path.join(pickle_folder, pickleFile))
                     tensor = pickle.load(f)
-                    tensorList.append(align_tensor(tensor, Config.image_angle[angle], width=width))
-                    print tensor.shape[0]
+                    # print tensor.shape
+                    tensorList.append(align_tensor(tensor, Config.imageAngleDict[defect_loc][camera_angle], width=width))
+                    # print tensor.shape[0]
                     labels = np.ndarray(tensor.shape[0], dtype=int)
                     labels[0:tensor.shape[0]] = int(label)
                     labelList.append(labels)
             except Exception as e:
-                print 'Unable to process data from {}, {}'.format(pickleFile, e)
-        
+                print 'Unable to process data from {}, {}'.format(pickleFile, e, os.path.join(pickle_folder, pickleFile))
+
     tensorFinal = np.concatenate(tensorList)
     labelFinal = np.concatenate(labelList)
     return tensorFinal, labelFinal
+
+
+def load_tensors_all(angle_folder, width=256):
+    '''load tensors from all angles
+    
+    Args:
+    
+    Notes:
+    
+    Return:
+    
+    '''
+    tensor_dict = {}
+    directories_list = os.listdir(angle_folder)
+    directories_list = [x for x in directories_list if not '.' in x]
+    for angle_dir in directories_list:
+        temp_dict = {}
+        tensors, labels = load_tensors(os.path.join(angle_folder, angle_dir))
+        temp_dict['tensors'] = tensors
+        temp_dict['labels'] = labels
+        tensor_dict[angle_dir] = temp_dict
         
+        
+        
+    return tensor_dict
+    
+
 
 def tensor_to_matrix(tensor):
     '''
     '''
     return tensor.reshape(tensor.shape[0], tensor.shape[1] * tensor.shape[2])
-    
-    
+
+
 def combine_shuffle_tensors(*tensorLabels):
     '''combine different tensors and shuffle them
-    
+
     Notes:
-    
+
     Args:
-    
+
     Return:
-    
+
     '''
     tensorList = []
     labelList = []
-    
+
     tensor_length = 0
-    
+
     for tensor, label in tensorLabels:
         tensor_length += tensor.shape[0]
-    
+
     print 'the final tensor should be {}'.format(tensor_length)
-    
+
     height = tensor.shape[1]
     width = tensor.shape[2]
     # initialize empth tensor and label
     # combined_tensor = np.ndarray(shape=(tensor_length, height, width), dtype=np.float32)
     # combined_label = np.ndarray(tensor_length, dtype=int)
-    
+
     for tensor, label in tensorLabels:
         tensorList.append(tensor)
         labelList.append(label)
-    
+
     final_tensor = np.concatenate(tensorList)
     final_label = np.concatenate(labelList)
-    
+
     shuffled_tensor, shuffled_label = randomize(final_tensor, final_label)
-    
+
     return shuffled_tensor, shuffled_label
-    
-    

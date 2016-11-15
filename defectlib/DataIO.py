@@ -4,6 +4,8 @@ import pandas as pd
 import pickle
 import cv2
 import os
+import random
+from tqdm import tqdm, trange
 
 pixel_depth = 255.0  # Number of levels per pixel.
 
@@ -22,32 +24,45 @@ def load_defects(folder):
     '''
     # images file names in a list
     image_files = os.listdir(folder)
+    image_files = [x for x in image_files if not 'DS_' in x]
     
-    print image_files
+    # print 'This is {}'.format(image_files)
     # from config import image shape information
-    from Config import imageShapeDict
+    # from Config import imageShapeDict
     # initialize numpy array for images
      
     # get image location from folder name
-    print folder
+    # print folder
     # test = folder.split('/')[-2]
     imageLoc = folder.split('/')[-1].split('_')[0]
     # print imageLoc
     # get angle of the camera from folder name
     imageAngle = folder.split('/')[-1].split('_')[1][1]
     # print imageAngle
+    if len(image_files) > 0:
+        random_image = random.choice(image_files)
+        image_loaded = cv2.imread(os.path.join(folder, random_image))
     
-    dataset = np.ndarray(shape=(len(image_files),
-                         imageShapeDict[imageLoc][imageAngle]['height'], 
-                         imageShapeDict[imageLoc][imageAngle]['width']), 
-                         dtype=np.float32)
+        dataset = np.ndarray(shape=(len(image_files),
+                                    #imageShapeDict[imageLoc][imageAngle]['height'], 
+                                    #imageShapeDict[imageLoc][imageAngle]['width']), 
+                                    image_loaded.shape[0],
+                                    image_loaded.shape[1]),
+                                    dtype=np.float32)
+    else:
+        dataset = np.ndarray(shape=(len(image_files),
+                                    #imageShapeDict[imageLoc][imageAngle]['height'], 
+                                    #imageShapeDict[imageLoc][imageAngle]['width']), 
+                                    200,
+                                    200),
+                                    dtype=np.float32)
+    
     
     num_images = 0
     
     for image in image_files:
-        print image
         # print os.path.splitext(image)[1]
-        if os.path.splitext(image)[1] == '.png':
+        if os.path.splitext(image)[1] == '.png' or os.path.splitext(image)[1] == '.jpg' and not 'Recom' in image:
             # print image
             try:
                 # the image data
@@ -68,9 +83,9 @@ def load_defects(folder):
     
     dataset = dataset[0:num_images, :, :]
     
-    print('Full dataset tensor:', dataset.shape)
-    print('Mean:', np.mean(dataset))
-    print('Standard deviation:', np.std(dataset))
+    # print('Full dataset tensor:', dataset.shape)
+    # print('Mean:', np.mean(dataset))
+    # print('Standard deviation:', np.std(dataset))
     
     return dataset
     
@@ -82,22 +97,24 @@ def maybe_pickle(defect_folder, force=False):
         defect_tensors/tp/9/tp_a9_c0/
         
     Args:
-        defect_folder: the folder contain defect images
+        defect_folder: the folder contain defect images, e.g., './defect_tensors/'
     
     Return:
         None
     
     '''
     # choose a angle and go to images 
-    for defect_loc in os.listdir(defect_folder):
+    for defect_loc in tqdm(os.listdir(defect_folder)):
         if not defect_loc.startswith('.'):
+            # print 'processing {}'.format(defect_loc)
             for defect_angle in os.listdir(os.path.join('.', defect_folder, defect_loc)):
-                if not defect_angle.startswith('.'):
+                if not defect_angle.startswith('.') and not defect_angle.endswith('csv'):
+                    # print 'processing {}'.format(defect_angle)
                     # initialize a list to include all tensor arrays
                     dataset_names = []
                     for defect_class in os.listdir(os.path.join('.', defect_folder, defect_loc, defect_angle)):
                         if not defect_class.startswith('.') and not defect_class.endswith('pickle'):
-                            
+                            # print 'process {}'.format(defect_class)    
                             pickleName = defect_class + '.pickle'
                             pathToPickle = os.path.join(defect_folder, defect_loc, defect_angle)
                             pathToImage =  os.path.join(defect_folder, defect_loc, defect_angle, defect_class)
