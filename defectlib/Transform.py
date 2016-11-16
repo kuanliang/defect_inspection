@@ -6,6 +6,8 @@ from imutils import rotate
 
 import Config
 
+from keras.utils import np_utils
+
 
 def randomize(tensor, labels):
     '''shuffle the tensor and its labels
@@ -201,3 +203,26 @@ def combine_shuffle_tensors(*tensorLabels):
             
     
     return shuffled_tensor, shuffled_label
+    
+def keras_transform(original_tensors, original_labels):
+    '''transform tensors to keras format and OHE labels
+    
+    Notes:
+        the following Keras setting for tensor format is (index, height, width, 1)
+        but it may changed, check latest Keras document if something wrong
+    
+    Args:
+        original_tensors (3 dim numpy array):
+        original_labels (1 dim numpy array):
+    
+    Return:
+        keras_tensors (4 dim numpy array)
+        keras_labels (n dim numpy array)
+    '''
+    keras_tensors = original_tensors.reshape(original_tensors.shape[0],
+                                             original_tensors.shape[1],
+                                             original_tensors.shape[2],
+                                             1)
+    keras_label = np_utils.to_categorical(original_labels)
+    
+    return keras_tensors, keras_label
