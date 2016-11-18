@@ -3,7 +3,7 @@ from keras.layers.core import Flatten, Dropout, Dense, Activation
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 
 
-def make_model():
+def make_model(nb_classes):
     '''make the model via Keras
     
     
@@ -26,7 +26,7 @@ def make_model():
     model.add(Dense(84))
     model.add(Activation('relu'))
     model.add(Dropout(0.5))
-    model.add(Dense(2))
+    model.add(Dense(nb_classes))
     model.add(Activation('softmax'))
     
     model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=["accuracy"])

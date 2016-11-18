@@ -9,7 +9,7 @@ import Config
 from keras.utils import np_utils
 
 
-def randomize(tensor, labels):
+def randomize(tensor, labels, sn):
     '''shuffle the tensor and its labels
 
     Notes:
@@ -26,8 +26,9 @@ def randomize(tensor, labels):
     permutation = np.random.permutation(labels.shape[0])
     shuffled_tensor = tensor[permutation,:,:]
     shuffled_labels = labels[permutation]
+    shuffled_sn = sn[permutation]
 
-    return shuffled_tensor, shuffled_labels
+    return shuffled_tensor, shuffled_labels, shuffled_sn
 
 
 def make_arrays(nb_rows, angle):
@@ -81,6 +82,9 @@ def load_tensors(pickle_folder, width=256):
     '''
     tensorList = []
     labelList = []
+    snList = []
+    
+    
     for pickleFile in os.listdir(pickle_folder):
         # print label
         # print pickleFile
@@ -92,31 +96,38 @@ def load_tensors(pickle_folder, width=256):
             camera_angle = os.path.splitext(pickleFile)[0].split('_')[1].replace('a', '')
             # print angle
             try:
-                with open(os.path.join(pickle_folder, pickleFile), 'rb') as f:
+                with open(os.path.join(pickle_folder,pickleFile), 'rb') as f:
                     # print 'path: {}'.format(os.path.join(pickle_folder, pickleFile))
-                    tensor = pickle.load(f)
+                    tensor_sn = pickle.load(f)
+                    tensor = tensor_sn[0]
+                    sn_angle = [x + '/' + camera_angle for x in tensor_sn[1]]
                     # print tensor.shape
-                    tensorList.append(align_tensor(tensor, Config.imageAngleDict[defect_loc][camera_angle], width=width))
+                    tensorList.append(align_tensor(tensor, Config.imageAngleDict[defect_loc.replace(' ', '_')][camera_angle], width=width))
                     # print tensor.shape[0]
                     labels = np.ndarray(tensor.shape[0], dtype=int)
                     labels[0:tensor.shape[0]] = int(label)
                     labelList.append(labels)
+                    snList += sn_angle
             except Exception as e:
                 print 'Unable to process data from {}, {}'.format(pickleFile, e, os.path.join(pickle_folder, pickleFile))
 
     tensorFinal = np.concatenate(tensorList)
     labelFinal = np.concatenate(labelList)
-    return tensorFinal, labelFinal
+    snFinal = np.array(snList)
+    return tensorFinal, labelFinal, snFinal
 
 
 def load_tensors_all(angle_folder, width=256):
     '''load tensors from all angles
     
-    Args:
-    
     Notes:
-    
+
+    Args:
+        angle_folder (string): path to the directory file
+        width (int): image size  
     Return:
+        tensor_dict (dictionary): Python dictionary
+        
     
     '''
     tensor_dict = {}
@@ -124,9 +135,10 @@ def load_tensors_all(angle_folder, width=256):
     directories_list = [x for x in directories_list if not '.' in x]
     for angle_dir in directories_list:
         temp_dict = {}
-        tensors, labels = load_tensors(os.path.join(angle_folder, angle_dir))
+        tensors, labels, sns = load_tensors(os.path.join(angle_folder, angle_dir))
         temp_dict['tensors'] = tensors
         temp_dict['labels'] = labels
+        temp_dict['sn'] = sns
         tensor_dict[angle_dir] = temp_dict
         
         
@@ -186,6 +198,7 @@ def combine_shuffle_tensors(*tensorLabels):
         
         tensorList = []
         labelList = []
+        snList = []
         
         tensor_length = 0
         
@@ -193,16 +206,18 @@ def combine_shuffle_tensors(*tensorLabels):
             tensor_length += len(tensor_dict[angle]['labels'])
             tensorList.append(tensor_dict[angle]['tensors'])
             labelList.append(tensor_dict[angle]['labels'])
+            snList.append(tensor_dict[angle]['sn'])
             
         final_tensor = np.concatenate(tensorList)
         final_label = np.concatenate(labelList)
+        final_sn = np.concatenate(snList)
         
         print 'the final tensor should be {}'.format(tensor_length)
         
-        shuffled_tensor, shuffled_label = randomize(final_tensor, final_label)
+        shuffled_tensor, shuffled_label, shuffled_sn = randomize(final_tensor, final_label, final_sn)
             
     
-    return shuffled_tensor, shuffled_label
+    return shuffled_tensor, shuffled_label, shuffled_sn
     
 def keras_transform(original_tensors, original_labels):
     '''transform tensors to keras format and OHE labels

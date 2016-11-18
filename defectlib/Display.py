@@ -5,7 +5,7 @@ import numpy as np
 from Transform import randomize
 
 
-def display_tensor(tensor, label):
+def display_tensor(tensor, label, sn):
     '''display images of all classes
     
     Notes:
@@ -19,7 +19,7 @@ def display_tensor(tensor, label):
     
     '''
     
-    tensor, label = randomize(tensor, label)
+    tensor, label, sn = randomize(tensor, label, sn)
     
     plt.figure(figsize=(10, 10))
     class_number = len(set(label))
@@ -33,6 +33,10 @@ def display_tensor(tensor, label):
             plt.subplot(class_number, 4, all_index)
             plt.axis('off')
             plt.imshow(tensor[label == class_index][img_index], cmap='gray')
+            # plt.set_xticklabels([]*10)
+            # plt.xlabel(sn[label == class_index][img_index])
+            # plt.xlabel('test2')
+            plt.title(sn[label == class_index][img_index])
             all_index += 1
     
 

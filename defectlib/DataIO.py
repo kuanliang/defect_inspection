@@ -25,6 +25,7 @@ def load_defects(folder):
     # images file names in a list
     image_files = os.listdir(folder)
     image_files = [x for x in image_files if not 'DS_' in x]
+    image_files = [x for x in image_files if not 'ipy' in x]
     
     # print 'This is {}'.format(image_files)
     # from config import image shape information
@@ -40,15 +41,19 @@ def load_defects(folder):
     imageAngle = folder.split('/')[-1].split('_')[1][1]
     # print imageAngle
     if len(image_files) > 0:
+        # print image_files
+        # get image shape
         random_image = random.choice(image_files)
         image_loaded = cv2.imread(os.path.join(folder, random_image))
-    
+        # initialize numpy array
         dataset = np.ndarray(shape=(len(image_files),
                                     #imageShapeDict[imageLoc][imageAngle]['height'], 
                                     #imageShapeDict[imageLoc][imageAngle]['width']), 
                                     image_loaded.shape[0],
                                     image_loaded.shape[1]),
                                     dtype=np.float32)
+        # sn_array = np.ndarray(shape=(len(image_files)))
+        sn_list = []
     else:
         dataset = np.ndarray(shape=(len(image_files),
                                     #imageShapeDict[imageLoc][imageAngle]['height'], 
@@ -56,14 +61,18 @@ def load_defects(folder):
                                     200,
                                     200),
                                     dtype=np.float32)
+        sn_list = []
     
     
+    # initialize the dictionary
     num_images = 0
     
     for image in image_files:
         # print os.path.splitext(image)[1]
+        # ignore Recommbination images
         if os.path.splitext(image)[1] == '.png' or os.path.splitext(image)[1] == '.jpg' and not 'Recom' in image:
             # print image
+            sn_nb = os.path.splitext(image)[0].split()[0]
             try:
                 # the image data
                 image_file = os.path.join(folder, image)
@@ -77,6 +86,8 @@ def load_defects(folder):
                 # print dataset.shape
                 
                 dataset[num_images,:,:] = image_data
+                # sn_raray[num_images] = sn_nb
+                sn_list.append(sn_nb)
                 num_images += 1
             except IOError as e:
                 print('Could not read:', image_file, ':', e, '- it\'s ok, skipping.')
@@ -87,7 +98,7 @@ def load_defects(folder):
     # print('Mean:', np.mean(dataset))
     # print('Standard deviation:', np.std(dataset))
     
-    return dataset
+    return dataset, sn_list
     
 def maybe_pickle(defect_folder, force=False):
     '''read in image files in tensor array and pickle it to specified directory
@@ -121,10 +132,10 @@ def maybe_pickle(defect_folder, force=False):
 
                             # print pathToImage
                             # 
-                            dataset = load_defects(pathToImage)
+                            dataset, sn_list = load_defects(pathToImage)
                             try:
                                 with open(os.path.join(pathToPickle, pickleName), 'wb') as f:
-                                    pickle.dump(dataset, f, pickle.HIGHEST_PROTOCOL)
+                                    pickle.dump((dataset, sn_list), f, pickle.HIGHEST_PROTOCOL)
                             except Exception as e:
                                 print('Unable to save data to', pickleName, ':', e)
                                 
