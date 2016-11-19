@@ -219,7 +219,7 @@ def combine_shuffle_tensors(*tensorLabels):
     
     return shuffled_tensor, shuffled_label, shuffled_sn
     
-def keras_transform(original_tensors, original_labels):
+def keras_transform(original_tensors, original_labels, image_dim_ordering='tf'):
     '''transform tensors to keras format and OHE labels
     
     Notes:
@@ -234,10 +234,18 @@ def keras_transform(original_tensors, original_labels):
         keras_tensors (4 dim numpy array)
         keras_labels (n dim numpy array)
     '''
-    keras_tensors = original_tensors.reshape(original_tensors.shape[0],
-                                             original_tensors.shape[1],
-                                             original_tensors.shape[2],
-                                             1)
+    if image_dim_ordering == 'tf':
+        keras_tensors = original_tensors.reshape(original_tensors.shape[0],
+                                                 original_tensors.shape[1],
+                                                 original_tensors.shape[2],
+                                                 1)
+    elif image_dim_ordering == 'th':
+                keras_tensors = original_tensors.reshape(
+                                                 original_tensors.shape[0],
+                                                 1,
+                                                 original_tensors.shape[1],
+                                                 original_tensors.shape[2])
+                                                 
     keras_label = np_utils.to_categorical(original_labels)
     
     return keras_tensors, keras_label

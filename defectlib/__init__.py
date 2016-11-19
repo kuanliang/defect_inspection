@@ -11,3 +11,4 @@ from .Transform import *
 from .imutils import *
 from .Display import *
 from .Model import *
+from .Utils import *
