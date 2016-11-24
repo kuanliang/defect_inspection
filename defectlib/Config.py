@@ -48,7 +48,19 @@ Test_Water_Paper_image_angle = {'1A': 0,
                       '9A': 0,
                       '10': 0,
                       '11': 0}
+                      
+TP_Paper_image_angle = {'1A': 0,
+                      '2A': 90,
+                      '3A': 0,
+                      '5A': 0,
+                      '6A': 0,
+                      '7A': 0,
+                      '8A': 90,
+                      '9A': 0,
+                      '10': 0,
+                      '11': 0}
 
 imageAngleDict = {'Conn1': Conn1_image_angle,
              'Conn2': Conn2_image_angle,
-             'Test_Water_Paper': Test_Water_Paper_image_angle}
+             'Test_Water_Paper': Test_Water_Paper_image_angle,
+             'TP_Paper': TP_Paper_image_angle}

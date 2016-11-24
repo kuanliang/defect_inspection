@@ -7,6 +7,7 @@ from imutils import rotate
 import Config
 
 from keras.utils import np_utils
+import pandas as pd
 
 
 def randomize(tensor, labels, sn):
@@ -212,11 +213,17 @@ def combine_shuffle_tensors(*tensorLabels):
         final_label = np.concatenate(labelList)
         final_sn = np.concatenate(snList)
         
+        
         print 'the final tensor should be {}'.format(tensor_length)
         
+        
         shuffled_tensor, shuffled_label, shuffled_sn = randomize(final_tensor, final_label, final_sn)
-            
+        
     
+    for index, item in enumerate(pd.Series(shuffled_label).value_counts()):
+        print 'number of class {}: {}'.format(index, item)
+        print '\tnumber of SN: {}'.format(len(set([sn.split('/')[0] for sn in shuffled_sn[shuffled_label == index]])))
+        
     return shuffled_tensor, shuffled_label, shuffled_sn
     
 def keras_transform(original_tensors, original_labels, image_dim_ordering='tf'):
