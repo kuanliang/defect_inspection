@@ -1,6 +1,7 @@
 from keras.models import Sequential
 from keras.layers.core import Flatten, Dropout, Dense, Activation
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
+from keras.utils import np_utils
 
 from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import KFold
@@ -9,20 +10,21 @@ from sklearn.model_selection import train_test_split
 from Transform import keras_transform
 
 from sklearn.metrics import log_loss
+from sklearn.metrics import accuracy_score
 from tqdm import tqdm
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-def make_model(nb_classes, image_dim_ordering='tf'):
+def make_model(nb_classes, image_dim_ordering='tf', input_shape = (128, 128)):
     '''make the model via Keras
     
     
     '''
     if image_dim_ordering == 'tf':
-        input_shape = (256, 256, 1)
+        input_shape = (input_shape[0], input_shape[1], 1)
     elif image_dim_ordering == 'th':
-        input_shape = (1, 256, 256)
+        input_shape = (1, input_shape[0], input_shape[1])
         
     model = Sequential()
 
@@ -57,14 +59,21 @@ def train_model(model, (train_data, train_labels), (val_data, val_labels), nb_ep
     score = model.evaluate(val_data, val_labels, verbose=1)
     
     
-def GroupKFold_modeling(tensors, labels, sn, nb_classes, batch_size=30, nb_epoch=10):
+def GroupKFold_modeling(tensors, labels, sn, nb_classes, batch_size=30, nb_epoch=10, input_shape=(128, 128)):
     '''use K-fold iterator with non-overlapping groups to do modeling
     
     Notes: The same group (S/N) will not appear in two different folds (the number of distinct groups has to be at least )
     
     Args:
+        tensos (3-d numpy array): images
+        labels (1-d numpy array): labels
+        sn (1-d numpy array): serial numbers 
+        nb_classes: the class of number being predicted
+        batch_size: batch size
+        nb_epoch: number of epochs
     
     Return:
+        
     
     '''
     # generate non-overlapping K-fold iterator 
@@ -73,35 +82,65 @@ def GroupKFold_modeling(tensors, labels, sn, nb_classes, batch_size=30, nb_epoch
     group_kfold = GroupKFold(n_splits=nb_group)
     
     models = []
-    sum_score = 0
+    # sum_score = 0
+    accuracy_dict = {}
+    logloss_dict = {}
+    nb_label = {}
+    for label in set(labels):
+        accuracy_dict[label] = 0
+        logloss_dict[label] = 0
+        nb_label[label] = 0
     
+        
     for train_index, test_index in group_kfold.split(tensors, labels, sn_only):
+        
+        
         
         label_val = set(labels[test_index])
         sn_val = set(sn_only[test_index])
-        print 'the label of validation image: {}'.format(label_val)
+        print 'the label of validation image: {}'.format(list(label_val)[0])
         print 'the s/n of validation image: {}'.format(sn_val)
         plt.imshow(tensors[test_index][0])
         tensors_k, labels_k = keras_transform(tensors, labels)
         tensors_train, labels_train = tensors_k[train_index], labels_k[train_index]
         tensors_val, labels_val = tensors_k[test_index], labels_k[test_index]
     
-        model = make_model(nb_classes=nb_classes)
+        model = make_model(nb_classes=nb_classes, input_shape=input_shape)
         model.fit(tensors_train, labels_train, batch_size=30, nb_epoch=nb_epoch, verbose=1,
                   validation_data=(tensors_val, labels_val))
                   
         predictions_val = model.predict(tensors_val)
+        predictions_val_class = model.predict_classes(tensors_val)
+        
+        # return labels_val, predictions_val_class
         
         score = log_loss(labels_val, predictions_val)
+        # print 
+        # return np.array([np.argmax(x) for x in labels_val])
+        accuracy = accuracy_score(np.array([np.argmax(x) for x in labels_val]), predictions_val_class)
         print('Sore log_loss: ', score)
-        sum_score += score
+        print('Accuracy:', accuracy)
+        accuracy_dict[list(label_val)[0]] += accuracy
+        logloss_dict[list(label_val)[0]] += score
+        
+        # accumulate number of labels count
+        nb_label[list(label_val)[0]] += 1
+        
         models.append(model)
         
-    info_string = 'loss_' + str(score) + '_folds_' + str(n_splits) + '_ep_' + str(nb_epoch)
+    accuracy_avg = {}
+    logloss_avg = {}
+    # take average of accuracy and logloss 
+    for accuracy, logloss in zip(accuracy_dict.items(), logloss_dict.items()):
+        accuracy_avg[accuracy[0]] = accuracy[1] / nb_label[accuracy[0]]
+        logloss_avg[logloss[0]] = logloss[1] / nb_label[logloss[0]]
+    
+    
+    # info_string = 'loss_' + str(score) + '_folds_' + str(n_splits) + '_ep_' + str(nb_epoch)
         
-    score = sum_score / len(labels_val)
-        
-    return info_string, models  
+    # score = sum_score / len(labels_val)
+    
+    return accuracy_avg, logloss_avg, models 
 
 def KFold_modeling(tensors, labels, nb_classes=3, n_splits=3, batch_size=30, nb_epoch=10):
     '''use k-fold iterator to do modeling

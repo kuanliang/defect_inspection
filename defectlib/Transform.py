@@ -46,8 +46,8 @@ def make_arrays(nb_rows, angle):
     return dataset, labels
 
 
-def align_tensor(tensor, angle, width=255):
-    '''align and resize the tensor to univeral (255*255) scale
+def align_tensor(tensor, angle, width=256):
+    '''align and resize the tensor to univeral (256*256) scale
 
     Notes:
 
@@ -136,7 +136,7 @@ def load_tensors_all(angle_folder, width=256):
     directories_list = [x for x in directories_list if not '.' in x]
     for angle_dir in directories_list:
         temp_dict = {}
-        tensors, labels, sns = load_tensors(os.path.join(angle_folder, angle_dir))
+        tensors, labels, sns = load_tensors(os.path.join(angle_folder, angle_dir), width=width)
         temp_dict['tensors'] = tensors
         temp_dict['labels'] = labels
         temp_dict['sn'] = sns
