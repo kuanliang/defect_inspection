@@ -6,8 +6,9 @@ import cv2
 import os
 import random
 from tqdm import tqdm, trange
+import matplotlib.image as mpimg
 
-pixel_depth = 255.0  # Number of levels per pixel.
+pixel_depth = 256.0  # Number of levels per pixel.
 
 def load_defects(folder):
     '''Load defect images as a tensor dataset of specific angle (vision), specific defect
@@ -44,7 +45,7 @@ def load_defects(folder):
         # print image_files
         # get image shape
         random_image = random.choice(image_files)
-        image_loaded = cv2.imread(os.path.join(folder, random_image))
+        image_loaded = mpimg.imread(os.path.join(folder, random_image))
         # initialize numpy array
         dataset = np.ndarray(shape=(len(image_files),
                                     #imageShapeDict[imageLoc][imageAngle]['height'], 
@@ -58,8 +59,8 @@ def load_defects(folder):
         dataset = np.ndarray(shape=(len(image_files),
                                     #imageShapeDict[imageLoc][imageAngle]['height'], 
                                     #imageShapeDict[imageLoc][imageAngle]['width']), 
-                                    200,
-                                    200),
+                                    256,
+                                    256),
                                     dtype=np.float32)
         sn_list = []
     
@@ -70,14 +71,17 @@ def load_defects(folder):
     for image in image_files:
         # print os.path.splitext(image)[1]
         # ignore Recommbination images
-        if os.path.splitext(image)[1] == '.png' or os.path.splitext(image)[1] == '.jpg' and not 'Recom' in image:
+        if os.path.splitext(image)[1] == '.png' or os.path.splitext(image)[1] == '.jpg' and 'Recom' in image:
             # print image
-            sn_nb = os.path.splitext(image)[0].split()[0]
+            # without Recombination 
+            # sn_nb = os.path.splitext(image)[0].split()[0]
+            # with Recombination
+            sn_nb = os.path.splitext(image)[0].split('_')[2]
             try:
                 # the image data
                 image_file = os.path.join(folder, image)
                 # read in the image to numpy array
-                rgb_image = cv2.imread(image_file)
+                rgb_image = mpimg.imread(image_file)
                 # print image_data
                 gray_image = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2GRAY)
                 image_data = (gray_image.astype(float) - pixel_depth / 2) / pixel_depth

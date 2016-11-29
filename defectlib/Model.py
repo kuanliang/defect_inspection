@@ -16,6 +16,13 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 
+def escape_rate(true, predict):
+    '''calculate escape rate 
+    
+    '''
+    return len(np.where(predict == 0)) / len(predict)
+    
+
 def make_model(nb_classes, image_dim_ordering='tf', input_shape = (128, 128)):
     '''make the model via Keras
     
@@ -82,25 +89,37 @@ def GroupKFold_modeling(tensors, labels, sn, nb_classes, batch_size=30, nb_epoch
     group_kfold = GroupKFold(n_splits=nb_group)
     
     models = []
+    
+    accuracy_escape_list = []
+    
+    
+    
     # sum_score = 0
     accuracy_dict = {}
     logloss_dict = {}
+    escape_dict = {}
     nb_label = {}
     for label in set(labels):
         accuracy_dict[label] = 0
         logloss_dict[label] = 0
+        escape_dict[label] = 0
         nb_label[label] = 0
     
+    
+    
+    
         
+    nb_model = 0
     for train_index, test_index in group_kfold.split(tensors, labels, sn_only):
         
-        
+        nb_model += 1
         
         label_val = set(labels[test_index])
         sn_val = set(sn_only[test_index])
+        print 'Model {}'.format(nb_model)
         print 'the label of validation image: {}'.format(list(label_val)[0])
-        print 'the s/n of validation image: {}'.format(sn_val)
-        plt.imshow(tensors[test_index][0])
+        print 'the s/n of validation image: {}'.format(list(sn_val)[0])
+        # plt.imshow(tensors[test_index][0])
         tensors_k, labels_k = keras_transform(tensors, labels)
         tensors_train, labels_train = tensors_k[train_index], labels_k[train_index]
         tensors_val, labels_val = tensors_k[test_index], labels_k[test_index]
@@ -120,27 +139,39 @@ def GroupKFold_modeling(tensors, labels, sn, nb_classes, batch_size=30, nb_epoch
         accuracy = accuracy_score(np.array([np.argmax(x) for x in labels_val]), predictions_val_class)
         print('Sore log_loss: ', score)
         print('Accuracy:', accuracy)
+        
+        # if the class is not normal
+        escape_rate = len(np.where(predictions_val_class == 0)[0]) / float(len(predictions_val_class))
+        if list(label_val)[0] != 0:
+            print 'Escape rate: {}'.format(escape_rate)
+        
         accuracy_dict[list(label_val)[0]] += accuracy
         logloss_dict[list(label_val)[0]] += score
+        escape_dict[list(label_val)[0]] += escape_rate
         
         # accumulate number of labels count
         nb_label[list(label_val)[0]] += 1
+        
+        # append accuracy_all_list and escape_all_list
+        # [label, sn, accuracy, escape]
+        accuracy_escape_list.append((list(label_val)[0], list(sn_val)[0], accuracy, escape_rate))
         
         models.append(model)
         
     accuracy_avg = {}
     logloss_avg = {}
+    escape_avg = {}
     # take average of accuracy and logloss 
-    for accuracy, logloss in zip(accuracy_dict.items(), logloss_dict.items()):
+    for accuracy, logloss, escape in zip(accuracy_dict.items(), logloss_dict.items(), escape_dict.items()):
         accuracy_avg[accuracy[0]] = accuracy[1] / nb_label[accuracy[0]]
         logloss_avg[logloss[0]] = logloss[1] / nb_label[logloss[0]]
-    
+        escape_avg[escape[0]] = escape[1] / nb_label[escape[0]]
     
     # info_string = 'loss_' + str(score) + '_folds_' + str(n_splits) + '_ep_' + str(nb_epoch)
         
     # score = sum_score / len(labels_val)
     
-    return accuracy_avg, logloss_avg, models 
+    return accuracy_avg, logloss_avg, escape_avg, accuracy_escape_list, models
 
 def KFold_modeling(tensors, labels, nb_classes=3, n_splits=3, batch_size=30, nb_epoch=10):
     '''use k-fold iterator to do modeling

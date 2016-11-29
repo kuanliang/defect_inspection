@@ -66,7 +66,7 @@ def align_tensor(tensor, angle, width=256):
         resized_image = cv2.resize(image, (width, width))
         rotated_image = rotate(resized_image, angle)
 
-        empty_tensor[index,:,:] = rotated_image
+        empty_tensor[index] = rotated_image
 
     return empty_tensor
 
@@ -100,17 +100,19 @@ def load_tensors(pickle_folder, width=256):
                 with open(os.path.join(pickle_folder,pickleFile), 'rb') as f:
                     # print 'path: {}'.format(os.path.join(pickle_folder, pickleFile))
                     tensor_sn = pickle.load(f)
-                    tensor = tensor_sn[0]
-                    sn_angle = [x + '/' + camera_angle for x in tensor_sn[1]]
-                    # print tensor.shape
-                    tensorList.append(align_tensor(tensor, Config.imageAngleDict[defect_loc.replace(' ', '_')][camera_angle], width=width))
-                    # print tensor.shape[0]
-                    labels = np.ndarray(tensor.shape[0], dtype=int)
-                    labels[0:tensor.shape[0]] = int(label)
-                    labelList.append(labels)
-                    snList += sn_angle
             except Exception as e:
                 print 'Unable to process data from {}, {}'.format(pickleFile, e, os.path.join(pickle_folder, pickleFile))
+                
+            tensor = tensor_sn[0]
+            sn_angle = [x + '/' + camera_angle for x in tensor_sn[1]]
+            print tensor.shape
+            tensorList.append(align_tensor(tensor, Config.imageAngleDict[defect_loc.replace(' ', '_')][camera_angle], width=width))
+            # print tensor.shape[0]
+            labels = np.ndarray(tensor.shape[0], dtype=int)
+            labels[0:tensor.shape[0]] = int(label)
+            labelList.append(labels)
+            snList += sn_angle
+
 
     tensorFinal = np.concatenate(tensorList)
     labelFinal = np.concatenate(labelList)
@@ -220,9 +222,13 @@ def combine_shuffle_tensors(*tensorLabels):
         shuffled_tensor, shuffled_label, shuffled_sn = randomize(final_tensor, final_label, final_sn)
         
     
+    label_summary = list(set(shuffled_label))
+    label_summary.sort()
+    
     for index, item in enumerate(pd.Series(shuffled_label).value_counts()):
-        print 'number of class {}: {}'.format(index, item)
-        print '\tnumber of SN: {}'.format(len(set([sn.split('/')[0] for sn in shuffled_sn[shuffled_label == index]])))
+        print 'number of class {}: {}'.format(label_summary[index], item)
+        print '\tnumber of SN: {}'.format(len(set([sn.split('/')[0] 
+                        for sn in shuffled_sn[shuffled_label == label_summary[index]]])))
         
     return shuffled_tensor, shuffled_label, shuffled_sn
     
@@ -256,3 +262,27 @@ def keras_transform(original_tensors, original_labels, image_dim_ordering='tf'):
     keras_label = np_utils.to_categorical(original_labels)
     
     return keras_tensors, keras_label
+    
+def remove_sn(tensors, labels, sns, remove_sn):
+    '''
+    '''
+    sns_only = np.array([x.split('/')[0] for x in sns])
+    mask = sns_only != remove_sn
+    tensors_removed = tensors[mask]
+    labels_removed = labels[mask]
+    sns_removed = sns[mask]
+    
+    return tensors_removed, labels_removed, sns_removed
+
+def remain_sn(tensors, labels, sns, remain_sn):
+    '''
+    '''
+    sns_remained = np.array([x.split('/')[0] for x in sns])
+    masks = sns_remained == remain_sn
+    tensors_remained = tensors[masks]
+    labels_remained = labels[masks]
+    sns_remained = sns[masks]
+    
+    return tensors_remained, labels_remained, sns_remained
+    
+    
