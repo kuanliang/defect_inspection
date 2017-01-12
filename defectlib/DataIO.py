@@ -8,6 +8,9 @@ import random
 from tqdm import tqdm, trange
 import matplotlib.image as mpimg
 
+
+import glob
+
 pixel_depth = 256.0  # Number of levels per pixel.
 
 def load_defects(folder):
@@ -224,3 +227,26 @@ def create_localTensors(path_to_local, gray=True):
         labels[index,:] = np.array(labelList[index])
         
     return dataset, labels
+    
+def extract_images_from_dir(path, comb):
+    '''extract images from a specified directory
+    
+    Notes: 
+        if comb==True, only Recombination images will be extracted
+           otherwise, all iamges will be extracted    
+    Args:
+        path (string): a path to the directory of images
+        comb (boolean):
+                True: use reconstruct images
+                False: use all images
+    Return:
+        filtered_images (list): a python list containing a list of filtered images
+    '''
+    # filtered_images = path + '/.jpg'
+    image_all = glob.glob(os.path.join(path, '*.jpg'))
+    if comb:
+        filtered_images = [image for image in image_all if 'Recombination' in image]
+    else:
+        filtered_images = image_all
+        
+    return filtered_images

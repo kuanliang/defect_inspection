@@ -16,6 +16,11 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+
+
+
+
 def escape_rate(true, predict):
     '''calculate escape rate 
     
@@ -250,4 +255,71 @@ def random_modeling(tensors, labels, nb_classes, batch_siz=30, nb_epoch=10, rand
               
     return model
     
+# transfer learning with SVM classifier
+
+import os
+import sklearn
+# from sklearn import cross_validation, grid_search
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.svm import SVC
+from sklearn.externals import joblib
+
+def train_svm_classifier(features, labels, sns, model_output_path, split=True):
+    '''train a svm classifier and saved the SVM model, report the classification performance
     
+    Notes:
+    
+    Args:
+        features: array of input features
+        labels: array of labels associated with the input features
+        model_output_path: path for storing the trained svm model
+    
+    Return:
+    
+    '''
+    if split:
+        print 'train test split == True'
+        X_train, X_test, y_train, y_test = train_test_split(features, labels)
+    else:
+        X_train = features
+        X_test = features
+        y_train = labels
+        y_test = labels
+        
+    params = [
+        {
+            "kernel": ["linear"],
+            "C": [1, 10, 100, 1000]
+        },
+        {
+            "kernel": ["rbf"],
+            "C": [1, 10, 100, 1000],
+            "gamma": [1e-2, 1e-3, 1e-4, 1e-5]
+        }
+    ]
+    
+    svm = SVC(probability=True)
+    
+    clf = GridSearchCV(svm, params, cv=3, verbose=3)
+    
+    clf.fit(X_train, y_train)
+    
+    if os.path.exists(model_output_path):
+        joblib.dump(clf.best_estimator_, model_output_path)
+    else:
+        print('Cannot save trained svm model to {}'.format(model_output_path))
+        
+    print("\nBest parameters set:")
+    print(clf.best_estimator_)
+    
+    y_predict = clf.predict(X_test)
+    labels=sorted(list(set(labels)))
+    print("\nConfusion matrix:")
+    print("Labels: {}\n".format(",".join(labels)))
+    print(confusion_matrix(y_test, y_predict, labels=labels))
+    
+    print("\nClassification report:")
+    print classification_report(y_test, y_predict)
+    
+    return clf

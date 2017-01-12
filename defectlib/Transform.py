@@ -10,6 +10,20 @@ from keras.utils import np_utils
 import pandas as pd
 
 
+# import for transfer leraning
+import os
+import re
+import glob
+
+import tensorflow as tf
+import tensorflow.python.platform
+from tensorflow.python.platform import gfile
+import sklearn
+import pickle
+
+from DataIO import extract_images_from_dir
+
+
 def randomize(tensor, labels, sn):
     '''shuffle the tensor and its labels
 
@@ -285,4 +299,156 @@ def remain_sn(tensors, labels, sns, remain_sn):
     
     return tensors_remained, labels_remained, sns_remained
     
+# transfer leraning
+def create_graph(model_path):
+    with gfile.FastGFile(model_path, 'rb') as f:
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(f.read())
+        _ = tf.import_graph_def(graph_def, name='')
+        
+        
+def extract_bottleneck_features(list_images):
+    '''extract buttleneck features from a list of images
     
+    Notes:
+        
+    
+    Args:
+        list_images (list): a list of path_to_images
+    
+    Return:
+        features (numpy array): an 2 dimensional numpy array,
+                                each row represents a transformed feature of an image
+        
+    '''
+    # transformed feature
+    nb_features = 2048
+    
+    # initial feature numpy array
+    features = np.empty((len(list_images),nb_features))
+    
+    labels = []
+    
+    # specified the inception model
+    create_graph('./inception_dec_2015/tensorflow_inception_graph.pb')
+    
+    
+    with tf.Session() as sess:
+
+        next_to_last_tensor = sess.graph.get_tensor_by_name('pool_3:0')
+        #return next_to_last_tensor
+        for ind, image in enumerate(list_images):
+            if (ind%100 == 0):
+                print('Processing %s...' % (image))
+            if not gfile.Exists(image):
+                tf.logging.fatal('File does not exist %s', image)
+
+            image_data = gfile.FastGFile(image, 'rb').read()
+            # print type(image_data)
+            # print image_data.shape
+            predictions = sess.run(next_to_last_tensor,
+                {'DecodeJpeg/contents:0': image_data}
+            )
+            features[ind,:] = np.squeeze(predictions)
+            # labels.append(re.split('_\d+', image.split('/')[1])[0])
+            # print labels
+
+    return features
+    
+def extract_bnfeatures_from_angle(path, comb):
+    '''extract features from specified angle path
+    
+    Notes:
+    
+    Args:
+        path (string): path to the specified directory
+        comb (boolean): whether use combination image
+        
+    Return:
+        features_final (numpy array): array containing features 
+        labelss_final (numpy array): array containing associated labels
+        sns_final (numpy array): array containing associated S/N
+        
+    '''
+    
+    angle_dir_names = [dir_names for dir_names in os.listdir(path) if os.path.isdir(os.path.join(path, dir_names))]
+    
+    # initialize empty list for storing objects
+    features_in_angle = []
+    labels_in_angle = []
+    sns_in_angle = []
+    images_in_angle = []
+    
+    
+    for class_dir in angle_dir_names:
+        
+        labels_empty = []
+        # use extract_images_from_dir to extract image list
+        images_list = extract_images_from_dir(os.path.join(path, class_dir), comb=comb)
+        print 'there are {} images inside {}'.format(len(images_list), class_dir)
+        # transform feature from exist model
+        features = extract_bottleneck_features(images_list)
+        labels_empty.append(class_dir.split('_')[-1][1:])
+        labels = labels_empty * len(images_list)
+        if comb:
+            sns = [os.path.basename(x).split('_')[2] for x in images_list]
+        else:
+            sns = [os.path.basename(x).split('_')[0].split(' ')[0] for x in images_list]
+        # 
+        features_in_angle.append(features)
+        labels_in_angle.append(labels)
+        sns_in_angle.append(sns)
+        images_in_angle.append(images_list)
+        
+    
+    features_final = np.concatenate(features_in_angle)
+    labels_final = np.concatenate(labels_in_angle)
+    sns_final = np.concatenate(sns_in_angle)
+    images_final = np.concatenate(images_in_angle)
+    
+    return features_final, labels_final, sns_final, images_final
+    
+def extract_bnfeatures_from_defect(path, comb=False):
+    '''extract features from images within specified defect directory
+    
+    Notes:
+        
+        
+    Args:
+        path (string): path to the specified defect directory
+    
+    Return:
+        features_all (numpy array): 
+        labels_all (numpy array):
+        sns_all (numpy array):
+    
+    '''
+    
+    # initialize the empty list for future object storage
+    features_list = []
+    labels_list = []
+    sns_list = []
+    images_list = []
+    
+    # iterate through each angle directory
+    for angle_dir in [x for x in os.listdir(path) if os.path.isdir(os.path.join(path, x))]:
+        
+        angle_path = os.path.join(path, angle_dir)
+        
+        # extract features from specified angle directory
+        features, labels, sns, images = extract_bnfeatures_from_angle(angle_path, comb=comb)
+        
+        # append extracted numpy array object (features, labels, sns, images to the list)
+        features_list.append(features)
+        labels_list.append(labels)
+        sns_list.append(sns)
+        images_list.append(images)
+    
+    
+    # np.concatenate the list of numpy arrays
+    features_all = np.concatenate(features_list)
+    labels_all = np.concatenate(labels_list)
+    sns_all = np.concatenate(sns_list)
+    images_all = np.concatenate(images_list)
+    
+    return features_all, labels_all, sns_all, images_all

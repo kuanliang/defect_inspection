@@ -12,3 +12,4 @@ from .imutils import *
 from .Display import *
 from .Model import *
 from .Utils import *
+from .Plot import *
