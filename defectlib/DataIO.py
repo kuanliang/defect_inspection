@@ -107,6 +107,14 @@ def load_defects(folder):
     
     return dataset, sn_list
     
+    
+def load_queries():
+    '''
+    '''
+    
+
+    
+
 def maybe_pickle(defect_folder, force=False):
     '''read in image files in tensor array and pickle it to specified directory
     
@@ -250,3 +258,43 @@ def extract_images_from_dir(path, comb):
         filtered_images = image_all
         
     return filtered_images
+
+
+## for online purpose
+## loading query image
+
+def extract_normal_features(images):
+    '''
+    '''
+    random_image = random.choice(images)
+    image_loaded = mpimg.imread(random_image)
+    dataset = np.ndarray(shape=(len(images),
+                         image_loaded.shape[0],
+                         image_loaded.shape[1]),
+                         dtype=np.float32)
+    
+    for index, image in enumerate(images):
+        rgb_image = mpimg.imread(image)
+        gray_image = rgb2gray(rgb_image)
+        nor_image = (gray_image.astype(float) - 255 /2) / 255
+        
+        dataset[index,:,:] = nor_image
+        
+    return dataset
+
+
+from imutils import rgb2gray
+
+def load_queries(path):
+    '''
+    '''
+    dataset_all = []
+    for angle_dir in [x for x in os.listdir(path) if os.path.isdir(os.path.join(path, x))]:
+        # print angle_dir
+        images = extract_images_from_dir(os.path.join(path, angle_dir), comb=False)
+        dataset = extract_normal_features(images)
+        dataset_all.append(dataset.reshape(dataset.shape[0], dataset.shape[1]*dataset.shape[2]))
+        
+    dataset_final = np.concatenate(dataset_all)
+    
+    return dataset_final

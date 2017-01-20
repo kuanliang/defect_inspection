@@ -31,6 +31,12 @@ def escape_rate(true, predict):
 def make_model(nb_classes, image_dim_ordering='tf', input_shape = (128, 128)):
     '''make the model via Keras
     
+    Notes:
+    
+    Args:
+    
+    Return:
+    
     
     '''
     if image_dim_ordering == 'tf':
@@ -63,12 +69,14 @@ def make_model(nb_classes, image_dim_ordering='tf', input_shape = (128, 128)):
     
     return model
     
-def train_model(model, (train_data, train_labels), (val_data, val_labels), nb_epoch=10, batch_size=30):
+def train_model(model, (train_data, train_label), (val_data, val_label), nb_epoch=10, batch_size=30):
     '''
     '''
-    model.fit(train_data, train_label, batch_size=batch_size, nb_epoch=np_epoch,
+    model.fit(train_data, train_label, batch_size=batch_size, nb_epoch=nb_epoch,
               verbose=1, validation_data=(val_data, val_label))
-    score = model.evaluate(val_data, val_labels, verbose=1)
+    score = model.evaluate(val_data, val_label, verbose=1)
+    
+    return model
     
     
 def GroupKFold_modeling(tensors, labels, sn, nb_classes, batch_size=30, nb_epoch=10, input_shape=(128, 128)):
@@ -306,7 +314,8 @@ def train_svm_classifier(features, labels, sns, model_output_path, split=True):
     clf.fit(X_train, y_train)
     
     if os.path.exists(model_output_path):
-        joblib.dump(clf.best_estimator_, model_output_path)
+        path_to_model = os.path.join(model_output_path, 'model.pkl')
+        joblib.dump(clf.best_estimator_, path_to_model)
     else:
         print('Cannot save trained svm model to {}'.format(model_output_path))
         

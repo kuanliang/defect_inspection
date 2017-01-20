@@ -56,3 +56,14 @@ def resize(image, width = None, height = None, inter = cv2.INTER_AREA):
 
 	# return the resized image
 	return resized
+	
+def rgb2gray(rgb):
+    '''rgb to gray image
+    
+    Notes:
+    
+    Args:
+    
+    Return:
+    '''
+    return np.dot(rgb, [0.299, 0.587, 0.114])

@@ -176,6 +176,7 @@ def combine_shuffle_tensors(*tensorLabels):
     Notes:
 
     Args:
+        
 
     Return:
 
@@ -186,10 +187,11 @@ def combine_shuffle_tensors(*tensorLabels):
         # print 'get'
         tensorList = []
         labelList = []
+        snList = []
     
         tensor_length = 0
     
-        for tensor, label in tensorLabels:
+        for tensor, label, sn in tensorLabels:
             tensor_length += tensor.shape[0]
     
         print 'the final tensor should be {}'.format(tensor_length)
@@ -200,14 +202,16 @@ def combine_shuffle_tensors(*tensorLabels):
         # combined_tensor = np.ndarray(shape=(tensor_length, height, width), dtype=np.float32)
         # combined_label = np.ndarray(tensor_length, dtype=int)
     
-        for tensor, label in tensorLabels:
+        for tensor, label, sn in tensorLabels:
             tensorList.append(tensor)
             labelList.append(label)
+            snList.append(sn)
     
         final_tensor = np.concatenate(tensorList)
         final_label = np.concatenate(labelList)
+        final_sn = np.concatenate(snList)
     
-        shuffled_tensor, shuffled_label = randomize(final_tensor, final_label)
+        shuffled_tensor, shuffled_label, shuffled_sn = randomize(final_tensor, final_label, final_sn)
     
     elif type(tensorLabels[0]) is dict:
         
@@ -299,8 +303,18 @@ def remain_sn(tensors, labels, sns, remain_sn):
     
     return tensors_remained, labels_remained, sns_remained
     
-# transfer leraning
+# transfer leraning: create Graph
 def create_graph(model_path):
+    '''create graph from the model specified directory path
+    
+    Notes: 
+    
+    Args:
+        model_path (string): directory path to the downloaded model
+    
+    Return:
+        None
+    '''
     with gfile.FastGFile(model_path, 'rb') as f:
         graph_def = tf.GraphDef()
         graph_def.ParseFromString(f.read())
@@ -354,7 +368,22 @@ def extract_bottleneck_features(list_images):
             # print labels
 
     return features
+
+
+def extract_normal_features():
+    '''extract normal features from images
     
+    Notes:
+    
+    Args:
+    
+    Return:
+    
+    '''
+
+    
+    return features
+
 def extract_bnfeatures_from_angle(path, comb):
     '''extract features from specified angle path
     
@@ -443,8 +472,6 @@ def extract_bnfeatures_from_defect(path, comb=False):
         labels_list.append(labels)
         sns_list.append(sns)
         images_list.append(images)
-    
-    
     # np.concatenate the list of numpy arrays
     features_all = np.concatenate(features_list)
     labels_all = np.concatenate(labels_list)
@@ -452,3 +479,45 @@ def extract_bnfeatures_from_defect(path, comb=False):
     images_all = np.concatenate(images_list)
     
     return features_all, labels_all, sns_all, images_all
+    
+    
+
+def extract_query_bnfeatures_from_defect(path, comb=False):
+    '''extract features from images within specified defect directory
+    
+    Notes:
+        
+        
+    Args:
+        path (string): path to the specified defect directory
+    
+    Return:
+        features_all (numpy array): 
+        labels_all (numpy array):
+        sns_all (numpy array):
+    
+    '''
+    
+    # initialize the empty list for future object storage
+    features_list = []
+    sns_list = []
+    images_list = []
+    
+    # iterate through each angle directory
+    for angle_dir in [x for x in os.listdir(path) if os.path.isdir(os.path.join(path, x))]:
+        
+        images = extract_images_from_dir(os.path.join(path, angle_dir), comb=comb)
+        
+        # extract features from specified angle directory
+        features = extract_bottleneck_features(images)
+        
+        # append extracted numpy array object (features, labels, sns, images to the list)
+        features_list.append(features)
+        # sns_list.append(sns)
+        images_list.append(images_list)
+    # np.concatenate the list of numpy arrays
+    features_all = np.concatenate(features_list)
+    # sns_all = np.concatenate(sns_list)
+    images_all = np.concatenate(images_list)
+    
+    return features_all, images_all
