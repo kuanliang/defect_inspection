@@ -1,0 +1,424 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh_TW">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Model &#8212; 目檢自動化 1.0.1 說明文件</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜尋" href="../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>瀏覽</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="總索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python 模組索引"
+             >模組</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">目檢自動化 1.0.1 說明文件</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">模組原始碼</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Model 的原始碼</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">keras.models</span> <span class="k">import</span> <span class="n">Sequential</span>
+<span class="kn">from</span> <span class="nn">keras.layers.core</span> <span class="k">import</span> <span class="n">Flatten</span><span class="p">,</span> <span class="n">Dropout</span><span class="p">,</span> <span class="n">Dense</span><span class="p">,</span> <span class="n">Activation</span>
+<span class="kn">from</span> <span class="nn">keras.layers.convolutional</span> <span class="k">import</span> <span class="n">Convolution2D</span><span class="p">,</span> <span class="n">MaxPooling2D</span>
+<span class="kn">from</span> <span class="nn">keras.utils</span> <span class="k">import</span> <span class="n">np_utils</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">GroupKFold</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">KFold</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">train_test_split</span>
+
+<span class="kn">from</span> <span class="nn">Transform</span> <span class="k">import</span> <span class="n">keras_transform</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">log_loss</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">accuracy_score</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="c1"># import matplotlib.pyplot as plt</span>
+
+
+
+
+
+
+<div class="viewcode-block" id="escape_rate"><a class="viewcode-back" href="../Model.html#Model.escape_rate">[文件]</a><span class="k">def</span> <span class="nf">escape_rate</span><span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">predict</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;calculate escape rate</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">predict</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">predict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="make_model"><a class="viewcode-back" href="../Model.html#Model.make_model">[文件]</a><span class="k">def</span> <span class="nf">make_model</span><span class="p">(</span><span class="n">nb_classes</span><span class="p">,</span> <span class="n">image_dim_ordering</span><span class="o">=</span><span class="s1">&#39;tf&#39;</span><span class="p">,</span> <span class="n">input_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">)):</span>
+    <span class="sd">&#39;&#39;&#39;make the model via Keras</span>
+
+<span class="sd">    Notes:</span>
+
+<span class="sd">    Args:</span>
+
+<span class="sd">    Return:</span>
+
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">image_dim_ordering</span> <span class="o">==</span> <span class="s1">&#39;tf&#39;</span><span class="p">:</span>
+        <span class="n">input_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">input_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">input_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">image_dim_ordering</span> <span class="o">==</span> <span class="s1">&#39;th&#39;</span><span class="p">:</span>
+        <span class="n">input_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">input_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Sequential</span><span class="p">()</span>
+
+    <span class="c1"># Convolution2D(number_filters, row_size, column_size, input_shape=(number_channels, img_row, img_col))</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Convolution2D</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="n">input_shape</span><span class="p">,</span> <span class="n">border_mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Activation</span><span class="p">(</span><span class="s1">&#39;relu&#39;</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">MaxPooling2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Convolution2D</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">border_mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Activation</span><span class="p">(</span><span class="s1">&#39;relu&#39;</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">MaxPooling2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Convolution2D</span><span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Activation</span><span class="p">(</span><span class="s1">&#39;relu&#39;</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.25</span><span class="p">))</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Flatten</span><span class="p">())</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dense</span><span class="p">(</span><span class="mi">84</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Activation</span><span class="p">(</span><span class="s1">&#39;relu&#39;</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dense</span><span class="p">(</span><span class="n">nb_classes</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Activation</span><span class="p">(</span><span class="s1">&#39;softmax&#39;</span><span class="p">))</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">loss</span><span class="o">=</span><span class="s1">&#39;categorical_crossentropy&#39;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;adadelta&#39;</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">model</span></div>
+
+<div class="viewcode-block" id="train_model"><a class="viewcode-back" href="../Model.html#Model.train_model">[文件]</a><span class="k">def</span> <span class="nf">train_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">train_labels</span><span class="p">),</span> <span class="p">(</span><span class="n">val_data</span><span class="p">,</span> <span class="n">val_labels</span><span class="p">),</span> <span class="n">nb_epoch</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">train_label</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">nb_epoch</span><span class="o">=</span><span class="n">np_epoch</span><span class="p">,</span>
+              <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="p">(</span><span class="n">val_data</span><span class="p">,</span> <span class="n">val_label</span><span class="p">))</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">val_data</span><span class="p">,</span> <span class="n">val_labels</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GroupKFold_modeling"><a class="viewcode-back" href="../Model.html#Model.GroupKFold_modeling">[文件]</a><span class="k">def</span> <span class="nf">GroupKFold_modeling</span><span class="p">(</span><span class="n">tensors</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">sn</span><span class="p">,</span> <span class="n">nb_classes</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">nb_epoch</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">)):</span>
+    <span class="sd">&#39;&#39;&#39;use K-fold iterator with non-overlapping groups to do modeling</span>
+
+<span class="sd">    Notes: The same group (S/N) will not appear in two different folds (the number of distinct groups has to be at least )</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tensos (3-d numpy array): images</span>
+<span class="sd">        labels (1-d numpy array): labels</span>
+<span class="sd">        sn (1-d numpy array): serial numbers</span>
+<span class="sd">        nb_classes: the class of number being predicted</span>
+<span class="sd">        batch_size: batch size</span>
+<span class="sd">        nb_epoch: number of epochs</span>
+
+<span class="sd">    Return:</span>
+
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># generate non-overlapping K-fold iterator</span>
+    <span class="n">sn_only</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sn</span><span class="p">])</span>
+    <span class="n">nb_group</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">sn_only</span><span class="p">))</span>
+    <span class="n">group_kfold</span> <span class="o">=</span> <span class="n">GroupKFold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="n">nb_group</span><span class="p">)</span>
+
+    <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">accuracy_escape_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+
+    <span class="c1"># sum_score = 0</span>
+    <span class="n">accuracy_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">logloss_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">escape_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">nb_label</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
+        <span class="n">accuracy_dict</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">logloss_dict</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">escape_dict</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">nb_label</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+
+
+
+    <span class="n">nb_model</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">train_index</span><span class="p">,</span> <span class="n">test_index</span> <span class="ow">in</span> <span class="n">group_kfold</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">tensors</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">sn_only</span><span class="p">):</span>
+
+        <span class="n">nb_model</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">label_val</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="n">test_index</span><span class="p">])</span>
+        <span class="n">sn_val</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">sn_only</span><span class="p">[</span><span class="n">test_index</span><span class="p">])</span>
+        <span class="nb">print</span> <span class="s1">&#39;Model </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nb_model</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="s1">&#39;the label of validation image: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">label_val</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="nb">print</span> <span class="s1">&#39;the s/n of validation image: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">sn_val</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="c1"># plt.imshow(tensors[test_index][0])</span>
+        <span class="n">tensors_k</span><span class="p">,</span> <span class="n">labels_k</span> <span class="o">=</span> <span class="n">keras_transform</span><span class="p">(</span><span class="n">tensors</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+        <span class="n">tensors_train</span><span class="p">,</span> <span class="n">labels_train</span> <span class="o">=</span> <span class="n">tensors_k</span><span class="p">[</span><span class="n">train_index</span><span class="p">],</span> <span class="n">labels_k</span><span class="p">[</span><span class="n">train_index</span><span class="p">]</span>
+        <span class="n">tensors_val</span><span class="p">,</span> <span class="n">labels_val</span> <span class="o">=</span> <span class="n">tensors_k</span><span class="p">[</span><span class="n">test_index</span><span class="p">],</span> <span class="n">labels_k</span><span class="p">[</span><span class="n">test_index</span><span class="p">]</span>
+
+        <span class="n">model</span> <span class="o">=</span> <span class="n">make_model</span><span class="p">(</span><span class="n">nb_classes</span><span class="o">=</span><span class="n">nb_classes</span><span class="p">,</span> <span class="n">input_shape</span><span class="o">=</span><span class="n">input_shape</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">tensors_train</span><span class="p">,</span> <span class="n">labels_train</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">nb_epoch</span><span class="o">=</span><span class="n">nb_epoch</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                  <span class="n">validation_data</span><span class="o">=</span><span class="p">(</span><span class="n">tensors_val</span><span class="p">,</span> <span class="n">labels_val</span><span class="p">))</span>
+
+        <span class="n">predictions_val</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">tensors_val</span><span class="p">)</span>
+        <span class="n">predictions_val_class</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_classes</span><span class="p">(</span><span class="n">tensors_val</span><span class="p">)</span>
+
+        <span class="c1"># return labels_val, predictions_val_class</span>
+
+        <span class="n">score</span> <span class="o">=</span> <span class="n">log_loss</span><span class="p">(</span><span class="n">labels_val</span><span class="p">,</span> <span class="n">predictions_val</span><span class="p">)</span>
+        <span class="c1"># print</span>
+        <span class="c1"># return np.array([np.argmax(x) for x in labels_val])</span>
+        <span class="n">accuracy</span> <span class="o">=</span> <span class="n">accuracy_score</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">labels_val</span><span class="p">]),</span> <span class="n">predictions_val_class</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Sore log_loss: &#39;</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Accuracy:&#39;</span><span class="p">,</span> <span class="n">accuracy</span><span class="p">)</span>
+
+        <span class="c1"># if the class is not normal</span>
+        <span class="n">escape_rate</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">predictions_val_class</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">predictions_val_class</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">list</span><span class="p">(</span><span class="n">label_val</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s1">&#39;Escape rate: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">escape_rate</span><span class="p">)</span>
+
+        <span class="n">accuracy_dict</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">label_val</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+=</span> <span class="n">accuracy</span>
+        <span class="n">logloss_dict</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">label_val</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+=</span> <span class="n">score</span>
+        <span class="n">escape_dict</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">label_val</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+=</span> <span class="n">escape_rate</span>
+
+        <span class="c1"># accumulate number of labels count</span>
+        <span class="n">nb_label</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">label_val</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># append accuracy_all_list and escape_all_list</span>
+        <span class="c1"># [label, sn, accuracy, escape]</span>
+        <span class="n">accuracy_escape_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">list</span><span class="p">(</span><span class="n">label_val</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">list</span><span class="p">(</span><span class="n">sn_val</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">accuracy</span><span class="p">,</span> <span class="n">escape_rate</span><span class="p">))</span>
+
+        <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="n">accuracy_avg</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">logloss_avg</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">escape_avg</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># take average of accuracy and logloss</span>
+    <span class="k">for</span> <span class="n">accuracy</span><span class="p">,</span> <span class="n">logloss</span><span class="p">,</span> <span class="n">escape</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">accuracy_dict</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">logloss_dict</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">escape_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="n">accuracy_avg</span><span class="p">[</span><span class="n">accuracy</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">accuracy</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">nb_label</span><span class="p">[</span><span class="n">accuracy</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">logloss_avg</span><span class="p">[</span><span class="n">logloss</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">logloss</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">nb_label</span><span class="p">[</span><span class="n">logloss</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">escape_avg</span><span class="p">[</span><span class="n">escape</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">escape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">nb_label</span><span class="p">[</span><span class="n">escape</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+    <span class="c1"># info_string = &#39;loss_&#39; + str(score) + &#39;_folds_&#39; + str(n_splits) + &#39;_ep_&#39; + str(nb_epoch)</span>
+
+    <span class="c1"># score = sum_score / len(labels_val)</span>
+
+    <span class="k">return</span> <span class="n">accuracy_avg</span><span class="p">,</span> <span class="n">logloss_avg</span><span class="p">,</span> <span class="n">escape_avg</span><span class="p">,</span> <span class="n">accuracy_escape_list</span><span class="p">,</span> <span class="n">models</span></div>
+
+<div class="viewcode-block" id="KFold_modeling"><a class="viewcode-back" href="../Model.html#Model.KFold_modeling">[文件]</a><span class="k">def</span> <span class="nf">KFold_modeling</span><span class="p">(</span><span class="n">tensors</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">nb_classes</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">n_splits</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">nb_epoch</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;use k-fold iterator to do modeling</span>
+
+<span class="sd">    Notes:</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tensors (numpy array): image array</span>
+<span class="sd">        labels (numpy array): label array</span>
+<span class="sd">        n_splits (int): number of fold for cross validation</span>
+<span class="sd">        batch_size (int): number of records trainined per batch</span>
+<span class="sd">        nb_epoch (int): number of epochs</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        info_string (string): cross validation result information</span>
+<span class="sd">        models (list): models stored in list</span>
+
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">sum_score</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+    <span class="c1"># initialize an kfold iterator</span>
+    <span class="n">kf</span> <span class="o">=</span> <span class="n">KFold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="n">n_splits</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+    <span class="k">for</span> <span class="n">train_index</span><span class="p">,</span> <span class="n">test_index</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">kf</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">tensors</span><span class="p">)):</span>
+
+        <span class="n">train_tensors</span><span class="p">,</span> <span class="n">train_labels</span> <span class="o">=</span> <span class="n">keras_transform</span><span class="p">(</span><span class="n">tensors</span><span class="p">[</span><span class="n">train_index</span><span class="p">],</span> <span class="n">labels</span><span class="p">[</span><span class="n">train_index</span><span class="p">])</span>
+        <span class="n">val_tensors</span><span class="p">,</span> <span class="n">val_labels</span> <span class="o">=</span> <span class="n">keras_transform</span><span class="p">(</span><span class="n">tensors</span><span class="p">[</span><span class="n">test_index</span><span class="p">],</span> <span class="n">labels</span><span class="p">[</span><span class="n">test_index</span><span class="p">])</span>
+
+        <span class="n">model</span> <span class="o">=</span> <span class="n">make_model</span><span class="p">(</span><span class="n">nb_classes</span><span class="o">=</span><span class="n">nb_classes</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_tensors</span><span class="p">,</span> <span class="n">train_labels</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">nb_epoch</span><span class="o">=</span><span class="n">nb_epoch</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                  <span class="n">validation_data</span><span class="o">=</span><span class="p">(</span><span class="n">val_tensors</span><span class="p">,</span> <span class="n">val_labels</span><span class="p">))</span>
+
+        <span class="n">predictions_valid</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">val_tensors</span><span class="p">)</span>
+
+        <span class="n">score</span> <span class="o">=</span> <span class="n">log_loss</span><span class="p">(</span><span class="n">val_labels</span><span class="p">,</span> <span class="n">predictions_valid</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Sore log_loss: &#39;</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span>
+        <span class="n">sum_score</span> <span class="o">+=</span> <span class="n">score</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="n">info_string</span> <span class="o">=</span> <span class="s1">&#39;loss_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_folds_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_splits</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_ep_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">nb_epoch</span><span class="p">)</span>
+
+    <span class="n">score</span> <span class="o">=</span> <span class="n">sum_score</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">val_labels</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">info_string</span><span class="p">,</span> <span class="n">models</span></div>
+
+<div class="viewcode-block" id="random_modeling"><a class="viewcode-back" href="../Model.html#Model.random_modeling">[文件]</a><span class="k">def</span> <span class="nf">random_modeling</span><span class="p">(</span><span class="n">tensors</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">nb_classes</span><span class="p">,</span> <span class="n">batch_siz</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">nb_epoch</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;split dataset to 80% training 20% testing for modeling</span>
+
+<span class="sd">    Notes:</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tensors (numpy array): image array</span>
+<span class="sd">        labels (numpy array): label array</span>
+<span class="sd">        n_splits (int): number of fold for cross validation</span>
+<span class="sd">        batch_size (int): number of records trainined per batch</span>
+<span class="sd">        nb_epoch (int): number of epochs</span>
+<span class="sd">        random_state (int): random state number</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        model</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># split the input to train test sets</span>
+    <span class="n">tensors_train</span><span class="p">,</span> <span class="n">tensors_val</span><span class="p">,</span> <span class="n">labels_train</span><span class="p">,</span> <span class="n">labels_val</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">tensors</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+                                                                              <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">)</span>
+    <span class="c1"># transform to keras input</span>
+    <span class="n">tensors_train_k</span><span class="p">,</span> <span class="n">labels_train_k</span> <span class="o">=</span> <span class="n">keras_transform</span><span class="p">(</span><span class="n">tensors_train</span><span class="p">,</span> <span class="n">labels_train</span><span class="p">)</span>
+    <span class="n">tensors_val_k</span><span class="p">,</span> <span class="n">labels_val_k</span> <span class="o">=</span> <span class="n">keras_transform</span><span class="p">(</span><span class="n">tensors_val</span><span class="p">,</span> <span class="n">labels_val</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">make_model</span><span class="p">(</span><span class="n">nb_classes</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">tensors_train_k</span><span class="p">,</span> <span class="n">labels_train_k</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">nb_epoch</span><span class="o">=</span><span class="n">nb_epoch</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+              <span class="n">validation_data</span><span class="o">=</span><span class="p">(</span><span class="n">tensors_val_k</span><span class="p">,</span> <span class="n">labels_val_k</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">model</span></div>
+
+<span class="c1"># transfer learning with SVM classifier</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sklearn</span>
+<span class="c1"># from sklearn import cross_validation, grid_search</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">train_test_split</span><span class="p">,</span> <span class="n">GridSearchCV</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">confusion_matrix</span><span class="p">,</span> <span class="n">classification_report</span>
+<span class="kn">from</span> <span class="nn">sklearn.svm</span> <span class="k">import</span> <span class="n">SVC</span>
+<span class="kn">from</span> <span class="nn">sklearn.externals</span> <span class="k">import</span> <span class="n">joblib</span>
+
+<div class="viewcode-block" id="train_svm_classifier"><a class="viewcode-back" href="../Model.html#Model.train_svm_classifier">[文件]</a><span class="k">def</span> <span class="nf">train_svm_classifier</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">sns</span><span class="p">,</span> <span class="n">model_output_path</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;train a svm classifier and saved the SVM model, report the classification performance</span>
+
+<span class="sd">    Notes:</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        features: array of input features</span>
+<span class="sd">        labels: array of labels associated with the input features</span>
+<span class="sd">        model_output_path: path for storing the trained svm model</span>
+
+<span class="sd">    Return:</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">split</span><span class="p">:</span>
+        <span class="nb">print</span> <span class="s1">&#39;train test split == True&#39;</span>
+        <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">X_train</span> <span class="o">=</span> <span class="n">features</span>
+        <span class="n">X_test</span> <span class="o">=</span> <span class="n">features</span>
+        <span class="n">y_train</span> <span class="o">=</span> <span class="n">labels</span>
+        <span class="n">y_test</span> <span class="o">=</span> <span class="n">labels</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;kernel&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;linear&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">]</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;kernel&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;rbf&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">],</span>
+            <span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+
+    <span class="n">svm</span> <span class="o">=</span> <span class="n">SVC</span><span class="p">(</span><span class="n">probability</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">clf</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">svm</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">model_output_path</span><span class="p">):</span>
+        <span class="n">path_to_model</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_output_path</span><span class="p">,</span> <span class="s1">&#39;model.pkl&#39;</span><span class="p">)</span>
+        <span class="n">joblib</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">clf</span><span class="o">.</span><span class="n">best_estimator_</span><span class="p">,</span> <span class="n">path_to_model</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Cannot save trained svm model to </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model_output_path</span><span class="p">))</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Best parameters set:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">clf</span><span class="o">.</span><span class="n">best_estimator_</span><span class="p">)</span>
+
+    <span class="n">y_predict</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+    <span class="n">labels</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">labels</span><span class="p">)))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Confusion matrix:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Labels: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">labels</span><span class="p">)))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">confusion_matrix</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_predict</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">))</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Classification report:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="n">classification_report</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_predict</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">clf</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>快速搜尋</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="前往" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>瀏覽</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="總索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python 模組索引"
+             >模組</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">目檢自動化 1.0.1 說明文件</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >模組原始碼</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; 版權所有 2017, IPD。
+      使用 <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1 創建。
+    </div>
+  </body>
+</html>

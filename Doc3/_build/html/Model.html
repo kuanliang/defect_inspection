@@ -1,0 +1,206 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh_TW">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Model - 建立模型 &#8212; 目檢自動化 1.0.1 說明文件</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜尋" href="search.html" />
+    <link rel="next" title="imutils" href="Imutils.html" />
+    <link rel="prev" title="Transform - 影像資料ETL" href="Transform.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>瀏覽</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="總索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python 模組索引"
+             >模組</a> |</li>
+        <li class="right" >
+          <a href="Imutils.html" title="imutils"
+             accesskey="N">下一頁</a> |</li>
+        <li class="right" >
+          <a href="Transform.html" title="Transform - 影像資料ETL"
+             accesskey="P">上一頁</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">目檢自動化 1.0.1 說明文件</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="model">
+<h1>Model - 建立模型<a class="headerlink" href="#model" title="本標題的永久連結">¶</a></h1>
+<span class="target" id="module-Model"></span><dl class="function">
+<dt id="Model.GroupKFold_modeling">
+<code class="descclassname">Model.</code><code class="descname">GroupKFold_modeling</code><span class="sig-paren">(</span><em>tensors</em>, <em>labels</em>, <em>sn</em>, <em>nb_classes</em>, <em>batch_size=30</em>, <em>nb_epoch=10</em>, <em>input_shape=(128</em>, <em>128)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Model.html#GroupKFold_modeling"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Model.GroupKFold_modeling" title="本定義的永久連結">¶</a></dt>
+<dd><p>use K-fold iterator with non-overlapping groups to do modeling</p>
+<p>Notes: The same group (S/N) will not appear in two different folds (the number of distinct groups has to be at least )</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>tensos (3-d numpy array): images
+labels (1-d numpy array): labels
+sn (1-d numpy array): serial numbers
+nb_classes: the class of number being predicted
+batch_size: batch size
+nb_epoch: number of epochs</dd>
+</dl>
+<p>Return:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="Model.KFold_modeling">
+<code class="descclassname">Model.</code><code class="descname">KFold_modeling</code><span class="sig-paren">(</span><em>tensors</em>, <em>labels</em>, <em>nb_classes=3</em>, <em>n_splits=3</em>, <em>batch_size=30</em>, <em>nb_epoch=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Model.html#KFold_modeling"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Model.KFold_modeling" title="本定義的永久連結">¶</a></dt>
+<dd><p>use k-fold iterator to do modeling</p>
+<p>Notes:</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>tensors (numpy array): image array
+labels (numpy array): label array
+n_splits (int): number of fold for cross validation
+batch_size (int): number of records trainined per batch
+nb_epoch (int): number of epochs</dd>
+<dt>Return:</dt>
+<dd>info_string (string): cross validation result information
+models (list): models stored in list</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="Model.escape_rate">
+<code class="descclassname">Model.</code><code class="descname">escape_rate</code><span class="sig-paren">(</span><em>true</em>, <em>predict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Model.html#escape_rate"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Model.escape_rate" title="本定義的永久連結">¶</a></dt>
+<dd><p>calculate escape rate</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="Model.make_model">
+<code class="descclassname">Model.</code><code class="descname">make_model</code><span class="sig-paren">(</span><em>nb_classes</em>, <em>image_dim_ordering='tf'</em>, <em>input_shape=(128</em>, <em>128)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Model.html#make_model"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Model.make_model" title="本定義的永久連結">¶</a></dt>
+<dd><p>make the model via Keras</p>
+<p>Notes:</p>
+<p>Args:</p>
+<p>Return:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="Model.random_modeling">
+<code class="descclassname">Model.</code><code class="descname">random_modeling</code><span class="sig-paren">(</span><em>tensors</em>, <em>labels</em>, <em>nb_classes</em>, <em>batch_siz=30</em>, <em>nb_epoch=10</em>, <em>random_state=50</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Model.html#random_modeling"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Model.random_modeling" title="本定義的永久連結">¶</a></dt>
+<dd><p>split dataset to 80% training 20% testing for modeling</p>
+<p>Notes:</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>tensors (numpy array): image array
+labels (numpy array): label array
+n_splits (int): number of fold for cross validation
+batch_size (int): number of records trainined per batch
+nb_epoch (int): number of epochs
+random_state (int): random state number</dd>
+<dt>Return:</dt>
+<dd>model</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="Model.train_model">
+<code class="descclassname">Model.</code><code class="descname">train_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/Model.html#train_model"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Model.train_model" title="本定義的永久連結">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="Model.train_svm_classifier">
+<code class="descclassname">Model.</code><code class="descname">train_svm_classifier</code><span class="sig-paren">(</span><em>features</em>, <em>labels</em>, <em>sns</em>, <em>model_output_path</em>, <em>split=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Model.html#train_svm_classifier"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Model.train_svm_classifier" title="本定義的永久連結">¶</a></dt>
+<dd><p>train a svm classifier and saved the SVM model, report the classification performance</p>
+<p>Notes:</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>features: array of input features
+labels: array of labels associated with the input features
+model_output_path: path for storing the trained svm model</dd>
+</dl>
+<p>Return:</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>上一個主題</h4>
+  <p class="topless"><a href="Transform.html"
+                        title="上一章">Transform - 影像資料ETL</a></p>
+  <h4>下一個主題</h4>
+  <p class="topless"><a href="Imutils.html"
+                        title="下一章">imutils</a></p>
+  <div role="note" aria-label="source link">
+    <h3>本頁</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/Model.rst.txt"
+            rel="nofollow">顯示原始碼</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>快速搜尋</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="前往" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>瀏覽</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="總索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python 模組索引"
+             >模組</a> |</li>
+        <li class="right" >
+          <a href="Imutils.html" title="imutils"
+             >下一頁</a> |</li>
+        <li class="right" >
+          <a href="Transform.html" title="Transform - 影像資料ETL"
+             >上一頁</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">目檢自動化 1.0.1 說明文件</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; 版權所有 2017, IPD。
+      使用 <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1 創建。
+    </div>
+  </body>
+</html>

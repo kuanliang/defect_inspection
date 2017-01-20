@@ -1,0 +1,546 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh_TW">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Transform &#8212; 目檢自動化 1.0.1 說明文件</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜尋" href="../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>瀏覽</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="總索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python 模組索引"
+             >模組</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">目檢自動化 1.0.1 說明文件</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">模組原始碼</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Transform 的原始碼</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">from</span> <span class="nn">imutils</span> <span class="k">import</span> <span class="n">rotate</span>
+
+<span class="kn">import</span> <span class="nn">Config</span>
+
+<span class="kn">from</span> <span class="nn">keras.utils</span> <span class="k">import</span> <span class="n">np_utils</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+
+<span class="c1"># import for transfer leraning</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">tensorflow.python.platform</span>
+<span class="kn">from</span> <span class="nn">tensorflow.python.platform</span> <span class="k">import</span> <span class="n">gfile</span>
+<span class="kn">import</span> <span class="nn">sklearn</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+
+<span class="kn">from</span> <span class="nn">DataIO</span> <span class="k">import</span> <span class="n">extract_images_from_dir</span>
+
+
+<div class="viewcode-block" id="randomize"><a class="viewcode-back" href="../Transform.html#Transform.randomize">[文件]</a><span class="k">def</span> <span class="nf">randomize</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">sn</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;shuffle the tensor and its labels</span>
+
+<span class="sd">    Notes:</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tensor:</span>
+<span class="sd">        labels:</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        shuffled_tensor:</span>
+<span class="sd">        shuffled_labels:</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">permutation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">labels</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">shuffled_tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="p">[</span><span class="n">permutation</span><span class="p">,:,:]</span>
+    <span class="n">shuffled_labels</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">permutation</span><span class="p">]</span>
+    <span class="n">shuffled_sn</span> <span class="o">=</span> <span class="n">sn</span><span class="p">[</span><span class="n">permutation</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">shuffled_tensor</span><span class="p">,</span> <span class="n">shuffled_labels</span><span class="p">,</span> <span class="n">shuffled_sn</span></div>
+
+
+<div class="viewcode-block" id="make_arrays"><a class="viewcode-back" href="../Transform.html#Transform.make_arrays">[文件]</a><span class="k">def</span> <span class="nf">make_arrays</span><span class="p">(</span><span class="n">nb_rows</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;initialize empty numpy arrays for dataset and labels</span>
+
+
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">nb_rows</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">((</span><span class="n">nb_rows</span><span class="p">,</span> <span class="n">img_height</span><span class="p">[</span><span class="n">angle</span><span class="p">],</span> <span class="n">img_width</span><span class="p">[</span><span class="n">angle</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="n">nb_rows</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataset</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">labels</span></div>
+
+
+<div class="viewcode-block" id="align_tensor"><a class="viewcode-back" href="../Transform.html#Transform.align_tensor">[文件]</a><span class="k">def</span> <span class="nf">align_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">256</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;align and resize the tensor to univeral (256*256) scale</span>
+
+<span class="sd">    Notes:</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tensor: tensor</span>
+<span class="sd">        angle: angle</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        return a tensor with resized and angle adjusted angle</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># initialize an empty numpy array for storing image arrays</span>
+    <span class="n">empty_tensor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">((</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">width</span><span class="p">,</span> <span class="n">width</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">image</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tensor</span><span class="p">):</span>
+        <span class="n">resized_image</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">width</span><span class="p">))</span>
+        <span class="n">rotated_image</span> <span class="o">=</span> <span class="n">rotate</span><span class="p">(</span><span class="n">resized_image</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span>
+
+        <span class="n">empty_tensor</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">rotated_image</span>
+
+    <span class="k">return</span> <span class="n">empty_tensor</span></div>
+
+
+<div class="viewcode-block" id="load_tensors"><a class="viewcode-back" href="../Transform.html#Transform.load_tensors">[文件]</a><span class="k">def</span> <span class="nf">load_tensors</span><span class="p">(</span><span class="n">pickle_folder</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">256</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;load images as tensors from specified angle folder</span>
+<span class="sd">    </span>
+<span class="sd">    Note:</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">    </span>
+<span class="sd">    Return:</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">tensorList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">labelList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">snList</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    
+    <span class="k">for</span> <span class="n">pickleFile</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">pickle_folder</span><span class="p">):</span>
+        <span class="c1"># print label</span>
+        <span class="c1"># print pickleFile</span>
+        <span class="k">if</span> <span class="n">pickleFile</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;pickle&#39;</span><span class="p">):</span>
+            <span class="n">defect_loc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">pickleFile</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># print pickleFile</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">pickleFile</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="c1"># print label</span>
+            <span class="n">camera_angle</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">pickleFile</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="c1"># print angle</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pickle_folder</span><span class="p">,</span><span class="n">pickleFile</span><span class="p">),</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="c1"># print &#39;path: {}&#39;.format(os.path.join(pickle_folder, pickleFile))</span>
+                    <span class="n">tensor_sn</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s1">&#39;Unable to process data from </span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pickleFile</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pickle_folder</span><span class="p">,</span> <span class="n">pickleFile</span><span class="p">))</span>
+                
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">tensor_sn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">sn_angle</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">camera_angle</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">tensor_sn</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+            <span class="nb">print</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">tensorList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">align_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">Config</span><span class="o">.</span><span class="n">imageAngleDict</span><span class="p">[</span><span class="n">defect_loc</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)][</span><span class="n">camera_angle</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">))</span>
+            <span class="c1"># print tensor.shape[0]</span>
+            <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">labels</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+            <span class="n">labelList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+            <span class="n">snList</span> <span class="o">+=</span> <span class="n">sn_angle</span>
+
+
+    <span class="n">tensorFinal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">tensorList</span><span class="p">)</span>
+    <span class="n">labelFinal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">labelList</span><span class="p">)</span>
+    <span class="n">snFinal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">snList</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tensorFinal</span><span class="p">,</span> <span class="n">labelFinal</span><span class="p">,</span> <span class="n">snFinal</span></div>
+
+
+<div class="viewcode-block" id="load_tensors_all"><a class="viewcode-back" href="../Transform.html#Transform.load_tensors_all">[文件]</a><span class="k">def</span> <span class="nf">load_tensors_all</span><span class="p">(</span><span class="n">angle_folder</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">256</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;load tensors from all angles</span>
+<span class="sd">    </span>
+<span class="sd">    Notes:</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        angle_folder (string): path to the directory file</span>
+<span class="sd">        width (int): image size  </span>
+<span class="sd">    Return:</span>
+<span class="sd">        tensor_dict (dictionary): Python dictionary</span>
+<span class="sd">        </span>
+<span class="sd">    </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">tensor_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">directories_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">angle_folder</span><span class="p">)</span>
+    <span class="n">directories_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">directories_list</span> <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">angle_dir</span> <span class="ow">in</span> <span class="n">directories_list</span><span class="p">:</span>
+        <span class="n">temp_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">tensors</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">sns</span> <span class="o">=</span> <span class="n">load_tensors</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">angle_folder</span><span class="p">,</span> <span class="n">angle_dir</span><span class="p">),</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">)</span>
+        <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;tensors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tensors</span>
+        <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;labels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels</span>
+        <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;sn&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sns</span>
+        <span class="n">tensor_dict</span><span class="p">[</span><span class="n">angle_dir</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_dict</span>
+        
+        
+        
+    <span class="k">return</span> <span class="n">tensor_dict</span></div>
+    
+
+
+<div class="viewcode-block" id="tensor_to_matrix"><a class="viewcode-back" href="../Transform.html#Transform.tensor_to_matrix">[文件]</a><span class="k">def</span> <span class="nf">tensor_to_matrix</span><span class="p">(</span><span class="n">tensor</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">tensor</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="combine_shuffle_tensors"><a class="viewcode-back" href="../Transform.html#Transform.combine_shuffle_tensors">[文件]</a><span class="k">def</span> <span class="nf">combine_shuffle_tensors</span><span class="p">(</span><span class="o">*</span><span class="n">tensorLabels</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;combine different tensors and shuffle them</span>
+
+<span class="sd">    Notes:</span>
+
+<span class="sd">    Args:</span>
+
+<span class="sd">    Return:</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># print type(tensorLabels[0])</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">tensorLabels</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">tuple</span><span class="p">:</span>
+        
+        <span class="c1"># print &#39;get&#39;</span>
+        <span class="n">tensorList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">labelList</span> <span class="o">=</span> <span class="p">[]</span>
+    
+        <span class="n">tensor_length</span> <span class="o">=</span> <span class="mi">0</span>
+    
+        <span class="k">for</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">tensorLabels</span><span class="p">:</span>
+            <span class="n">tensor_length</span> <span class="o">+=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    
+        <span class="nb">print</span> <span class="s1">&#39;the final tensor should be </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tensor_length</span><span class="p">)</span>
+    
+        <span class="n">height</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="c1"># initialize empth tensor and label</span>
+        <span class="c1"># combined_tensor = np.ndarray(shape=(tensor_length, height, width), dtype=np.float32)</span>
+        <span class="c1"># combined_label = np.ndarray(tensor_length, dtype=int)</span>
+    
+        <span class="k">for</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">tensorLabels</span><span class="p">:</span>
+            <span class="n">tensorList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+            <span class="n">labelList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+    
+        <span class="n">final_tensor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">tensorList</span><span class="p">)</span>
+        <span class="n">final_label</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">labelList</span><span class="p">)</span>
+    
+        <span class="n">shuffled_tensor</span><span class="p">,</span> <span class="n">shuffled_label</span> <span class="o">=</span> <span class="n">randomize</span><span class="p">(</span><span class="n">final_tensor</span><span class="p">,</span> <span class="n">final_label</span><span class="p">)</span>
+    
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">tensorLabels</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
+        
+        <span class="n">tensor_dict</span> <span class="o">=</span> <span class="n">tensorLabels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="n">tensorList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">labelList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">snList</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="n">tensor_length</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">for</span> <span class="n">angle</span> <span class="ow">in</span> <span class="n">tensorLabels</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">tensor_length</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensor_dict</span><span class="p">[</span><span class="n">angle</span><span class="p">][</span><span class="s1">&#39;labels&#39;</span><span class="p">])</span>
+            <span class="n">tensorList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tensor_dict</span><span class="p">[</span><span class="n">angle</span><span class="p">][</span><span class="s1">&#39;tensors&#39;</span><span class="p">])</span>
+            <span class="n">labelList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tensor_dict</span><span class="p">[</span><span class="n">angle</span><span class="p">][</span><span class="s1">&#39;labels&#39;</span><span class="p">])</span>
+            <span class="n">snList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tensor_dict</span><span class="p">[</span><span class="n">angle</span><span class="p">][</span><span class="s1">&#39;sn&#39;</span><span class="p">])</span>
+            
+        <span class="n">final_tensor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">tensorList</span><span class="p">)</span>
+        <span class="n">final_label</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">labelList</span><span class="p">)</span>
+        <span class="n">final_sn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">snList</span><span class="p">)</span>
+        
+        
+        <span class="nb">print</span> <span class="s1">&#39;the final tensor should be </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tensor_length</span><span class="p">)</span>
+        
+        
+        <span class="n">shuffled_tensor</span><span class="p">,</span> <span class="n">shuffled_label</span><span class="p">,</span> <span class="n">shuffled_sn</span> <span class="o">=</span> <span class="n">randomize</span><span class="p">(</span><span class="n">final_tensor</span><span class="p">,</span> <span class="n">final_label</span><span class="p">,</span> <span class="n">final_sn</span><span class="p">)</span>
+        
+    
+    <span class="n">label_summary</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">shuffled_label</span><span class="p">))</span>
+    <span class="n">label_summary</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">shuffled_label</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()):</span>
+        <span class="nb">print</span> <span class="s1">&#39;number of class </span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">label_summary</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="n">item</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="s1">&#39;</span><span class="se">\t</span><span class="s1">number of SN: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">sn</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> 
+                        <span class="k">for</span> <span class="n">sn</span> <span class="ow">in</span> <span class="n">shuffled_sn</span><span class="p">[</span><span class="n">shuffled_label</span> <span class="o">==</span> <span class="n">label_summary</span><span class="p">[</span><span class="n">index</span><span class="p">]]])))</span>
+        
+    <span class="k">return</span> <span class="n">shuffled_tensor</span><span class="p">,</span> <span class="n">shuffled_label</span><span class="p">,</span> <span class="n">shuffled_sn</span></div>
+    
+<div class="viewcode-block" id="keras_transform"><a class="viewcode-back" href="../Transform.html#Transform.keras_transform">[文件]</a><span class="k">def</span> <span class="nf">keras_transform</span><span class="p">(</span><span class="n">original_tensors</span><span class="p">,</span> <span class="n">original_labels</span><span class="p">,</span> <span class="n">image_dim_ordering</span><span class="o">=</span><span class="s1">&#39;tf&#39;</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;transform tensors to keras format and OHE labels</span>
+<span class="sd">    </span>
+<span class="sd">    Notes:</span>
+<span class="sd">        the following Keras setting for tensor format is (index, height, width, 1)</span>
+<span class="sd">        but it may changed, check latest Keras document if something wrong</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        original_tensors (3 dim numpy array):</span>
+<span class="sd">        original_labels (1 dim numpy array):</span>
+<span class="sd">    </span>
+<span class="sd">    Return:</span>
+<span class="sd">        keras_tensors (4 dim numpy array)</span>
+<span class="sd">        keras_labels (n dim numpy array)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">image_dim_ordering</span> <span class="o">==</span> <span class="s1">&#39;tf&#39;</span><span class="p">:</span>
+        <span class="n">keras_tensors</span> <span class="o">=</span> <span class="n">original_tensors</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">original_tensors</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                                 <span class="n">original_tensors</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                                 <span class="n">original_tensors</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                                                 <span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">image_dim_ordering</span> <span class="o">==</span> <span class="s1">&#39;th&#39;</span><span class="p">:</span>
+                <span class="n">keras_tensors</span> <span class="o">=</span> <span class="n">original_tensors</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                                                 <span class="n">original_tensors</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                                 <span class="mi">1</span><span class="p">,</span>
+                                                 <span class="n">original_tensors</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                                 <span class="n">original_tensors</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                                                 
+    <span class="n">keras_label</span> <span class="o">=</span> <span class="n">np_utils</span><span class="o">.</span><span class="n">to_categorical</span><span class="p">(</span><span class="n">original_labels</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">keras_tensors</span><span class="p">,</span> <span class="n">keras_label</span></div>
+    
+<div class="viewcode-block" id="remove_sn"><a class="viewcode-back" href="../Transform.html#Transform.remove_sn">[文件]</a><span class="k">def</span> <span class="nf">remove_sn</span><span class="p">(</span><span class="n">tensors</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">sns</span><span class="p">,</span> <span class="n">remove_sn</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">sns_only</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sns</span><span class="p">])</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">sns_only</span> <span class="o">!=</span> <span class="n">remove_sn</span>
+    <span class="n">tensors_removed</span> <span class="o">=</span> <span class="n">tensors</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+    <span class="n">labels_removed</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+    <span class="n">sns_removed</span> <span class="o">=</span> <span class="n">sns</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+    
+    <span class="k">return</span> <span class="n">tensors_removed</span><span class="p">,</span> <span class="n">labels_removed</span><span class="p">,</span> <span class="n">sns_removed</span></div>
+
+<div class="viewcode-block" id="remain_sn"><a class="viewcode-back" href="../Transform.html#Transform.remain_sn">[文件]</a><span class="k">def</span> <span class="nf">remain_sn</span><span class="p">(</span><span class="n">tensors</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">sns</span><span class="p">,</span> <span class="n">remain_sn</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">sns_remained</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sns</span><span class="p">])</span>
+    <span class="n">masks</span> <span class="o">=</span> <span class="n">sns_remained</span> <span class="o">==</span> <span class="n">remain_sn</span>
+    <span class="n">tensors_remained</span> <span class="o">=</span> <span class="n">tensors</span><span class="p">[</span><span class="n">masks</span><span class="p">]</span>
+    <span class="n">labels_remained</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">masks</span><span class="p">]</span>
+    <span class="n">sns_remained</span> <span class="o">=</span> <span class="n">sns</span><span class="p">[</span><span class="n">masks</span><span class="p">]</span>
+    
+    <span class="k">return</span> <span class="n">tensors_remained</span><span class="p">,</span> <span class="n">labels_remained</span><span class="p">,</span> <span class="n">sns_remained</span></div>
+    
+<span class="c1"># transfer leraning</span>
+<span class="k">def</span> <span class="nf">create_graph</span><span class="p">(</span><span class="n">model_path</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">gfile</span><span class="o">.</span><span class="n">FastGFile</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">graph_def</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">GraphDef</span><span class="p">()</span>
+        <span class="n">graph_def</span><span class="o">.</span><span class="n">ParseFromString</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">import_graph_def</span><span class="p">(</span><span class="n">graph_def</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        
+        
+<div class="viewcode-block" id="extract_bottleneck_features"><a class="viewcode-back" href="../Transform.html#Transform.extract_bottleneck_features">[文件]</a><span class="k">def</span> <span class="nf">extract_bottleneck_features</span><span class="p">(</span><span class="n">list_images</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;extract buttleneck features from a list of images</span>
+<span class="sd">    </span>
+<span class="sd">    Notes:</span>
+<span class="sd">        </span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        list_images (list): a list of path_to_images</span>
+<span class="sd">    </span>
+<span class="sd">    Return:</span>
+<span class="sd">        features (numpy array): an 2 dimensional numpy array,</span>
+<span class="sd">                                each row represents a transformed feature of an image</span>
+<span class="sd">        </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># transformed feature</span>
+    <span class="n">nb_features</span> <span class="o">=</span> <span class="mi">2048</span>
+    
+    <span class="c1"># initial feature numpy array</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">list_images</span><span class="p">),</span><span class="n">nb_features</span><span class="p">))</span>
+    
+    <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="c1"># specified the inception model</span>
+    <span class="n">create_graph</span><span class="p">(</span><span class="s1">&#39;./inception_dec_2015/tensorflow_inception_graph.pb&#39;</span><span class="p">)</span>
+    
+    
+    <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">sess</span><span class="p">:</span>
+
+        <span class="n">next_to_last_tensor</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_tensor_by_name</span><span class="p">(</span><span class="s1">&#39;pool_3:0&#39;</span><span class="p">)</span>
+        <span class="c1">#return next_to_last_tensor</span>
+        <span class="k">for</span> <span class="n">ind</span><span class="p">,</span> <span class="n">image</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">list_images</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">ind</span><span class="o">%</span><span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Processing </span><span class="si">%s</span><span class="s1">...&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">image</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">gfile</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">image</span><span class="p">):</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s1">&#39;File does not exist </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">image</span><span class="p">)</span>
+
+            <span class="n">image_data</span> <span class="o">=</span> <span class="n">gfile</span><span class="o">.</span><span class="n">FastGFile</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="c1"># print type(image_data)</span>
+            <span class="c1"># print image_data.shape</span>
+            <span class="n">predictions</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">next_to_last_tensor</span><span class="p">,</span>
+                <span class="p">{</span><span class="s1">&#39;DecodeJpeg/contents:0&#39;</span><span class="p">:</span> <span class="n">image_data</span><span class="p">}</span>
+            <span class="p">)</span>
+            <span class="n">features</span><span class="p">[</span><span class="n">ind</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
+            <span class="c1"># labels.append(re.split(&#39;_\d+&#39;, image.split(&#39;/&#39;)[1])[0])</span>
+            <span class="c1"># print labels</span>
+
+    <span class="k">return</span> <span class="n">features</span></div>
+    
+<div class="viewcode-block" id="extract_bnfeatures_from_angle"><a class="viewcode-back" href="../Transform.html#Transform.extract_bnfeatures_from_angle">[文件]</a><span class="k">def</span> <span class="nf">extract_bnfeatures_from_angle</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">comb</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;extract features from specified angle path</span>
+<span class="sd">    </span>
+<span class="sd">    Notes:</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        path (string): path to the specified directory</span>
+<span class="sd">        comb (boolean): whether use combination image</span>
+<span class="sd">        </span>
+<span class="sd">    Return:</span>
+<span class="sd">        features_final (numpy array): array containing features </span>
+<span class="sd">        labelss_final (numpy array): array containing associated labels</span>
+<span class="sd">        sns_final (numpy array): array containing associated S/N</span>
+<span class="sd">        </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    <span class="n">angle_dir_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">dir_names</span> <span class="k">for</span> <span class="n">dir_names</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dir_names</span><span class="p">))]</span>
+    
+    <span class="c1"># initialize empty list for storing objects</span>
+    <span class="n">features_in_angle</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">labels_in_angle</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">sns_in_angle</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">images_in_angle</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    
+    <span class="k">for</span> <span class="n">class_dir</span> <span class="ow">in</span> <span class="n">angle_dir_names</span><span class="p">:</span>
+        
+        <span class="n">labels_empty</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># use extract_images_from_dir to extract image list</span>
+        <span class="n">images_list</span> <span class="o">=</span> <span class="n">extract_images_from_dir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">class_dir</span><span class="p">),</span> <span class="n">comb</span><span class="o">=</span><span class="n">comb</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="s1">&#39;there are </span><span class="si">{}</span><span class="s1"> images inside </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">images_list</span><span class="p">),</span> <span class="n">class_dir</span><span class="p">)</span>
+        <span class="c1"># transform feature from exist model</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">extract_bottleneck_features</span><span class="p">(</span><span class="n">images_list</span><span class="p">)</span>
+        <span class="n">labels_empty</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">class_dir</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">labels_empty</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">images_list</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">comb</span><span class="p">:</span>
+            <span class="n">sns</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">images_list</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sns</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">images_list</span><span class="p">]</span>
+        <span class="c1"># </span>
+        <span class="n">features_in_angle</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="n">labels_in_angle</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+        <span class="n">sns_in_angle</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sns</span><span class="p">)</span>
+        <span class="n">images_in_angle</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">images_list</span><span class="p">)</span>
+        
+    
+    <span class="n">features_final</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">features_in_angle</span><span class="p">)</span>
+    <span class="n">labels_final</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">labels_in_angle</span><span class="p">)</span>
+    <span class="n">sns_final</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">sns_in_angle</span><span class="p">)</span>
+    <span class="n">images_final</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">images_in_angle</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">features_final</span><span class="p">,</span> <span class="n">labels_final</span><span class="p">,</span> <span class="n">sns_final</span><span class="p">,</span> <span class="n">images_final</span></div>
+    
+<div class="viewcode-block" id="extract_bnfeatures_from_defect"><a class="viewcode-back" href="../Transform.html#Transform.extract_bnfeatures_from_defect">[文件]</a><span class="k">def</span> <span class="nf">extract_bnfeatures_from_defect</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">comb</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;extract features from images within specified defect directory</span>
+<span class="sd">    </span>
+<span class="sd">    Notes:</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+<span class="sd">    Args:</span>
+<span class="sd">        path (string): path to the specified defect directory</span>
+<span class="sd">    </span>
+<span class="sd">    Return:</span>
+<span class="sd">        features_all (numpy array): </span>
+<span class="sd">        labels_all (numpy array):</span>
+<span class="sd">        sns_all (numpy array):</span>
+<span class="sd">    </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    <span class="c1"># initialize the empty list for future object storage</span>
+    <span class="n">features_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">labels_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">sns_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">images_list</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="c1"># iterate through each angle directory</span>
+    <span class="k">for</span> <span class="n">angle_dir</span> <span class="ow">in</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">x</span><span class="p">))]:</span>
+        
+        <span class="n">angle_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">angle_dir</span><span class="p">)</span>
+        
+        <span class="c1"># extract features from specified angle directory</span>
+        <span class="n">features</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">sns</span><span class="p">,</span> <span class="n">images</span> <span class="o">=</span> <span class="n">extract_bnfeatures_from_angle</span><span class="p">(</span><span class="n">angle_path</span><span class="p">,</span> <span class="n">comb</span><span class="o">=</span><span class="n">comb</span><span class="p">)</span>
+        
+        <span class="c1"># append extracted numpy array object (features, labels, sns, images to the list)</span>
+        <span class="n">features_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="n">labels_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+        <span class="n">sns_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sns</span><span class="p">)</span>
+        <span class="n">images_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+    
+    
+    <span class="c1"># np.concatenate the list of numpy arrays</span>
+    <span class="n">features_all</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">features_list</span><span class="p">)</span>
+    <span class="n">labels_all</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">labels_list</span><span class="p">)</span>
+    <span class="n">sns_all</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">sns_list</span><span class="p">)</span>
+    <span class="n">images_all</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">images_list</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">features_all</span><span class="p">,</span> <span class="n">labels_all</span><span class="p">,</span> <span class="n">sns_all</span><span class="p">,</span> <span class="n">images_all</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>快速搜尋</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="前往" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>瀏覽</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="總索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python 模組索引"
+             >模組</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">目檢自動化 1.0.1 說明文件</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >模組原始碼</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; 版權所有 2017, IPD。
+      使用 <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1 創建。
+    </div>
+  </body>
+</html>

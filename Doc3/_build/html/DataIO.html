@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh_TW">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>DataIO - 影像資料IO &#8212; 目檢自動化 1.0.1 說明文件</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜尋" href="search.html" />
+    <link rel="next" title="Transform - 影像資料ETL" href="Transform.html" />
+    <link rel="prev" title="Welcome to 目檢自動化’s documentation!" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>瀏覽</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="總索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python 模組索引"
+             >模組</a> |</li>
+        <li class="right" >
+          <a href="Transform.html" title="Transform - 影像資料ETL"
+             accesskey="N">下一頁</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to 目檢自動化’s documentation!"
+             accesskey="P">上一頁</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">目檢自動化 1.0.1 說明文件</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-DataIO">
+<span id="dataio-io"></span><h1>DataIO - 影像資料IO<a class="headerlink" href="#module-DataIO" title="本標題的永久連結">¶</a></h1>
+<dl class="function">
+<dt id="DataIO.create_localTensors">
+<code class="descclassname">DataIO.</code><code class="descname">create_localTensors</code><span class="sig-paren">(</span><em>path_to_local</em>, <em>gray=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/DataIO.html#create_localTensors"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#DataIO.create_localTensors" title="本定義的永久連結">¶</a></dt>
+<dd><p>create tensors for localizers</p>
+<p>Notes:</p>
+<p>Args:</p>
+<p>Return:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="DataIO.extract_images_from_dir">
+<code class="descclassname">DataIO.</code><code class="descname">extract_images_from_dir</code><span class="sig-paren">(</span><em>path</em>, <em>comb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/DataIO.html#extract_images_from_dir"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#DataIO.extract_images_from_dir" title="本定義的永久連結">¶</a></dt>
+<dd><p>extract images from a specified directory</p>
+<dl class="docutils">
+<dt>Notes: </dt>
+<dd><dl class="first last docutils">
+<dt>if comb==True, only Recombination images will be extracted</dt>
+<dd>otherwise, all iamges will be extracted</dd>
+</dl>
+</dd>
+<dt>Args:</dt>
+<dd><p class="first">path (string): a path to the directory of images
+comb (boolean):</p>
+<blockquote class="last">
+<div>True: use reconstruct images
+False: use all images</div></blockquote>
+</dd>
+<dt>Return:</dt>
+<dd>filtered_images (list): a python list containing a list of filtered images</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="DataIO.load_defects">
+<code class="descclassname">DataIO.</code><code class="descname">load_defects</code><span class="sig-paren">(</span><em>folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/DataIO.html#load_defects"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#DataIO.load_defects" title="本定義的永久連結">¶</a></dt>
+<dd><p>Load defect images as a tensor dataset of specific angle (vision), specific defect</p>
+<p>Notes:</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>folder: 
+angle:</dd>
+<dt>Return:</dt>
+<dd>dataset: a dataset contain image arrays where first index is the number of images</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="DataIO.maybe_pickle">
+<code class="descclassname">DataIO.</code><code class="descname">maybe_pickle</code><span class="sig-paren">(</span><em>defect_folder</em>, <em>force=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/DataIO.html#maybe_pickle"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#DataIO.maybe_pickle" title="本定義的永久連結">¶</a></dt>
+<dd><p>read in image files in tensor array and pickle it to specified directory</p>
+<dl class="docutils">
+<dt>Notes:</dt>
+<dd>the directory is like the following:
+defect_tensors/tp/9/tp_a9_c0/</dd>
+<dt>Args:</dt>
+<dd>defect_folder: the folder contain defect images, e.g., &#8216;./defect_tensors/&#8217;</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>上一個主題</h4>
+  <p class="topless"><a href="index.html"
+                        title="上一章">Welcome to 目檢自動化&#8217;s documentation!</a></p>
+  <h4>下一個主題</h4>
+  <p class="topless"><a href="Transform.html"
+                        title="下一章">Transform - 影像資料ETL</a></p>
+  <div role="note" aria-label="source link">
+    <h3>本頁</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/DataIO.rst.txt"
+            rel="nofollow">顯示原始碼</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>快速搜尋</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="前往" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>瀏覽</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="總索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python 模組索引"
+             >模組</a> |</li>
+        <li class="right" >
+          <a href="Transform.html" title="Transform - 影像資料ETL"
+             >下一頁</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to 目檢自動化’s documentation!"
+             >上一頁</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">目檢自動化 1.0.1 說明文件</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; 版權所有 2017, IPD。
+      使用 <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1 創建。
+    </div>
+  </body>
+</html>

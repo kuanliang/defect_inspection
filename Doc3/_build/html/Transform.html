@@ -1,0 +1,266 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh_TW">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Transform - 影像資料ETL &#8212; 目檢自動化 1.0.1 說明文件</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/translations.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜尋" href="search.html" />
+    <link rel="next" title="Model - 建立模型" href="Model.html" />
+    <link rel="prev" title="DataIO - 影像資料IO" href="DataIO.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>瀏覽</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="總索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python 模組索引"
+             >模組</a> |</li>
+        <li class="right" >
+          <a href="Model.html" title="Model - 建立模型"
+             accesskey="N">下一頁</a> |</li>
+        <li class="right" >
+          <a href="DataIO.html" title="DataIO - 影像資料IO"
+             accesskey="P">上一頁</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">目檢自動化 1.0.1 說明文件</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-Transform">
+<span id="transform-etl"></span><h1>Transform - 影像資料ETL<a class="headerlink" href="#module-Transform" title="本標題的永久連結">¶</a></h1>
+<dl class="function">
+<dt id="Transform.align_tensor">
+<code class="descclassname">Transform.</code><code class="descname">align_tensor</code><span class="sig-paren">(</span><em>tensor</em>, <em>angle</em>, <em>width=256</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Transform.html#align_tensor"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Transform.align_tensor" title="本定義的永久連結">¶</a></dt>
+<dd><p>align and resize the tensor to univeral (256*256) scale</p>
+<p>Notes:</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>tensor: tensor
+angle: angle</dd>
+<dt>Return:</dt>
+<dd>return a tensor with resized and angle adjusted angle</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="Transform.combine_shuffle_tensors">
+<code class="descclassname">Transform.</code><code class="descname">combine_shuffle_tensors</code><span class="sig-paren">(</span><em>*tensorLabels</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Transform.html#combine_shuffle_tensors"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Transform.combine_shuffle_tensors" title="本定義的永久連結">¶</a></dt>
+<dd><p>combine different tensors and shuffle them</p>
+<p>Notes:</p>
+<p>Args:</p>
+<p>Return:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="Transform.extract_bnfeatures_from_angle">
+<code class="descclassname">Transform.</code><code class="descname">extract_bnfeatures_from_angle</code><span class="sig-paren">(</span><em>path</em>, <em>comb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Transform.html#extract_bnfeatures_from_angle"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Transform.extract_bnfeatures_from_angle" title="本定義的永久連結">¶</a></dt>
+<dd><p>extract features from specified angle path</p>
+<p>Notes:</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>path (string): path to the specified directory
+comb (boolean): whether use combination image</dd>
+<dt>Return:</dt>
+<dd>features_final (numpy array): array containing features 
+labelss_final (numpy array): array containing associated labels
+sns_final (numpy array): array containing associated S/N</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="Transform.extract_bnfeatures_from_defect">
+<code class="descclassname">Transform.</code><code class="descname">extract_bnfeatures_from_defect</code><span class="sig-paren">(</span><em>path</em>, <em>comb=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Transform.html#extract_bnfeatures_from_defect"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Transform.extract_bnfeatures_from_defect" title="本定義的永久連結">¶</a></dt>
+<dd><p>extract features from images within specified defect directory</p>
+<p>Notes:</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>path (string): path to the specified defect directory</dd>
+<dt>Return:</dt>
+<dd>features_all (numpy array): 
+labels_all (numpy array):
+sns_all (numpy array):</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="Transform.extract_bottleneck_features">
+<code class="descclassname">Transform.</code><code class="descname">extract_bottleneck_features</code><span class="sig-paren">(</span><em>list_images</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Transform.html#extract_bottleneck_features"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Transform.extract_bottleneck_features" title="本定義的永久連結">¶</a></dt>
+<dd><p>extract buttleneck features from a list of images</p>
+<p>Notes:</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>list_images (list): a list of path_to_images</dd>
+<dt>Return:</dt>
+<dd><dl class="first last docutils">
+<dt>features (numpy array): an 2 dimensional numpy array,</dt>
+<dd>each row represents a transformed feature of an image</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="Transform.keras_transform">
+<code class="descclassname">Transform.</code><code class="descname">keras_transform</code><span class="sig-paren">(</span><em>original_tensors</em>, <em>original_labels</em>, <em>image_dim_ordering='tf'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Transform.html#keras_transform"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Transform.keras_transform" title="本定義的永久連結">¶</a></dt>
+<dd><p>transform tensors to keras format and OHE labels</p>
+<dl class="docutils">
+<dt>Notes:</dt>
+<dd>the following Keras setting for tensor format is (index, height, width, 1)
+but it may changed, check latest Keras document if something wrong</dd>
+<dt>Args:</dt>
+<dd>original_tensors (3 dim numpy array):
+original_labels (1 dim numpy array):</dd>
+<dt>Return:</dt>
+<dd>keras_tensors (4 dim numpy array)
+keras_labels (n dim numpy array)</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="Transform.load_tensors">
+<code class="descclassname">Transform.</code><code class="descname">load_tensors</code><span class="sig-paren">(</span><em>pickle_folder</em>, <em>width=256</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Transform.html#load_tensors"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Transform.load_tensors" title="本定義的永久連結">¶</a></dt>
+<dd><p>load images as tensors from specified angle folder</p>
+<p>Note:</p>
+<p>Args:</p>
+<p>Return:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="Transform.load_tensors_all">
+<code class="descclassname">Transform.</code><code class="descname">load_tensors_all</code><span class="sig-paren">(</span><em>angle_folder</em>, <em>width=256</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Transform.html#load_tensors_all"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Transform.load_tensors_all" title="本定義的永久連結">¶</a></dt>
+<dd><p>load tensors from all angles</p>
+<p>Notes:</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>angle_folder (string): path to the directory file
+width (int): image size</dd>
+<dt>Return:</dt>
+<dd>tensor_dict (dictionary): Python dictionary</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="Transform.make_arrays">
+<code class="descclassname">Transform.</code><code class="descname">make_arrays</code><span class="sig-paren">(</span><em>nb_rows</em>, <em>angle</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Transform.html#make_arrays"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Transform.make_arrays" title="本定義的永久連結">¶</a></dt>
+<dd><p>initialize empty numpy arrays for dataset and labels</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="Transform.randomize">
+<code class="descclassname">Transform.</code><code class="descname">randomize</code><span class="sig-paren">(</span><em>tensor</em>, <em>labels</em>, <em>sn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Transform.html#randomize"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Transform.randomize" title="本定義的永久連結">¶</a></dt>
+<dd><p>shuffle the tensor and its labels</p>
+<p>Notes:</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>tensor:
+labels:</dd>
+<dt>Return:</dt>
+<dd>shuffled_tensor:
+shuffled_labels:</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="Transform.remain_sn">
+<code class="descclassname">Transform.</code><code class="descname">remain_sn</code><span class="sig-paren">(</span><em>tensors</em>, <em>labels</em>, <em>sns</em>, <em>remain_sn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Transform.html#remain_sn"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Transform.remain_sn" title="本定義的永久連結">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="Transform.remove_sn">
+<code class="descclassname">Transform.</code><code class="descname">remove_sn</code><span class="sig-paren">(</span><em>tensors</em>, <em>labels</em>, <em>sns</em>, <em>remove_sn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Transform.html#remove_sn"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Transform.remove_sn" title="本定義的永久連結">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="Transform.tensor_to_matrix">
+<code class="descclassname">Transform.</code><code class="descname">tensor_to_matrix</code><span class="sig-paren">(</span><em>tensor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Transform.html#tensor_to_matrix"><span class="viewcode-link">[原始碼]</span></a><a class="headerlink" href="#Transform.tensor_to_matrix" title="本定義的永久連結">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>上一個主題</h4>
+  <p class="topless"><a href="DataIO.html"
+                        title="上一章">DataIO - 影像資料IO</a></p>
+  <h4>下一個主題</h4>
+  <p class="topless"><a href="Model.html"
+                        title="下一章">Model - 建立模型</a></p>
+  <div role="note" aria-label="source link">
+    <h3>本頁</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/Transform.rst.txt"
+            rel="nofollow">顯示原始碼</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>快速搜尋</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="前往" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>瀏覽</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="總索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python 模組索引"
+             >模組</a> |</li>
+        <li class="right" >
+          <a href="Model.html" title="Model - 建立模型"
+             >下一頁</a> |</li>
+        <li class="right" >
+          <a href="DataIO.html" title="DataIO - 影像資料IO"
+             >上一頁</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">目檢自動化 1.0.1 說明文件</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; 版權所有 2017, IPD。
+      使用 <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1 創建。
+    </div>
+  </body>
+</html>
