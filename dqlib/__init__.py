@@ -8,3 +8,6 @@
 from .DataIO import *
 from .imutils import *
 from .Predict import *
+from .Transform import *
+from .Config import *
+

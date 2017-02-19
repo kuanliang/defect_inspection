@@ -55,7 +55,7 @@ def extract_normal_features(images):
     return dataset
 
 
-from imutils import rgb2gray
+# from imutils import rgb2gray
 
 def load_queries(path):
     '''
@@ -64,7 +64,9 @@ def load_queries(path):
     for angle_dir in [x for x in os.listdir(path) if os.path.isdir(os.path.join(path, x))]:
         # print angle_dir
         images = extract_images_from_dir(os.path.join(path, angle_dir), comb=False)
+        # normalize the image
         dataset = extract_normal_features(images)
+        # 
         dataset_all.append(dataset.reshape(dataset.shape[0], dataset.shape[1]*dataset.shape[2]))
         
     dataset_final = np.concatenate(dataset_all)
