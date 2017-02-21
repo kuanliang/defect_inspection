@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from tsne import bh_sne
+# from tsne import bh_sne
 
 from bokeh.plotting import figure, output_file, show, ColumnDataSource
 from bokeh.models import HoverTool

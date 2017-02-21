@@ -221,8 +221,8 @@ def create_localTensors(path_to_local, gray=True):
     # get width and height of the image
     width = tensorList[0].shape[1]
     height = tensorList[0].shape[0]
-    print width
-    print height
+    print(width)
+    print(height)
     
     for index, tensor in enumerate(tensorList):
         if gray == True:
@@ -281,20 +281,3 @@ def extract_normal_features(images):
         dataset[index,:,:] = nor_image
         
     return dataset
-
-
-from imutils import rgb2gray
-
-def load_queries(path):
-    '''
-    '''
-    dataset_all = []
-    for angle_dir in [x for x in os.listdir(path) if os.path.isdir(os.path.join(path, x))]:
-        # print angle_dir
-        images = extract_images_from_dir(os.path.join(path, angle_dir), comb=False)
-        dataset = extract_normal_features(images)
-        dataset_all.append(dataset.reshape(dataset.shape[0], dataset.shape[1]*dataset.shape[2]))
-        
-    dataset_final = np.concatenate(dataset_all)
-    
-    return dataset_final

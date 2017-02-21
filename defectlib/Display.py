@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 
-from Transform import randomize
+from defectlib.Transform import randomize
 
 
 def display_tensor(tensor, label, sn):

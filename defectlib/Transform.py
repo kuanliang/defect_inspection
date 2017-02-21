@@ -2,9 +2,9 @@ import os
 import numpy as np
 import pickle
 import cv2
-from imutils import rotate
+from defectlib.imutils import rotate
 
-import Config
+import defectlib.Config
 
 from keras.utils import np_utils
 import pandas as pd
@@ -21,7 +21,7 @@ from tensorflow.python.platform import gfile
 import sklearn
 import pickle
 
-from DataIO import extract_images_from_dir
+from defectlib.DataIO import extract_images_from_dir
 
 
 def randomize(tensor, labels, sn):
@@ -115,11 +115,11 @@ def load_tensors(pickle_folder, width=256):
                     # print 'path: {}'.format(os.path.join(pickle_folder, pickleFile))
                     tensor_sn = pickle.load(f)
             except Exception as e:
-                print 'Unable to process data from {}, {}'.format(pickleFile, e, os.path.join(pickle_folder, pickleFile))
+                print('Unable to process data from {}, {}'.format(pickleFile, e, os.path.join(pickle_folder, pickleFile)))
                 
             tensor = tensor_sn[0]
             sn_angle = [x + '/' + camera_angle for x in tensor_sn[1]]
-            print tensor.shape
+            print(tensor.shape)
             tensorList.append(align_tensor(tensor, Config.imageAngleDict[defect_loc.replace(' ', '_')][camera_angle], width=width))
             # print tensor.shape[0]
             labels = np.ndarray(tensor.shape[0], dtype=int)
@@ -194,7 +194,7 @@ def combine_shuffle_tensors(*tensorLabels):
         for tensor, label, sn in tensorLabels:
             tensor_length += tensor.shape[0]
     
-        print 'the final tensor should be {}'.format(tensor_length)
+        print('the final tensor should be {}'.format(tensor_length))
     
         height = tensor.shape[1]
         width = tensor.shape[2]
@@ -234,7 +234,7 @@ def combine_shuffle_tensors(*tensorLabels):
         final_sn = np.concatenate(snList)
         
         
-        print 'the final tensor should be {}'.format(tensor_length)
+        print('the final tensor should be {}'.format(tensor_length))
         
         
         shuffled_tensor, shuffled_label, shuffled_sn = randomize(final_tensor, final_label, final_sn)
@@ -244,9 +244,9 @@ def combine_shuffle_tensors(*tensorLabels):
     label_summary.sort()
     
     for index, item in enumerate(pd.Series(shuffled_label).value_counts()):
-        print 'number of class {}: {}'.format(label_summary[index], item)
-        print '\tnumber of SN: {}'.format(len(set([sn.split('/')[0] 
-                        for sn in shuffled_sn[shuffled_label == label_summary[index]]])))
+        print('number of class {}: {}'.format(label_summary[index], item))
+        print('\tnumber of SN: {}'.format(len(set([sn.split('/')[0] 
+                        for sn in shuffled_sn[shuffled_label == label_summary[index]]]))))
         
     return shuffled_tensor, shuffled_label, shuffled_sn
     
@@ -414,7 +414,7 @@ def extract_bnfeatures_from_angle(path, comb):
         labels_empty = []
         # use extract_images_from_dir to extract image list
         images_list = extract_images_from_dir(os.path.join(path, class_dir), comb=comb)
-        print 'there are {} images inside {}'.format(len(images_list), class_dir)
+        print('there are {} images inside {}'.format(len(images_list), class_dir))
         # transform feature from exist model
         features = extract_bottleneck_features(images_list)
         labels_empty.append(class_dir.split('_')[-1][1:])

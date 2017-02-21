@@ -8,7 +8,7 @@ import matplotlib.image as mpimg
 import glob
 
     
-def extract_images_from_dir(path, comb):
+def extract_images_from_dir(path, comb=False):
     '''extract images from a specified directory
     
     Notes: 
@@ -24,6 +24,7 @@ def extract_images_from_dir(path, comb):
     '''
     # filtered_images = path + '/.jpg'
     image_all = glob.glob(os.path.join(path, '*.jpg'))
+    print(image_all)
     if comb:
         filtered_images = [image for image in image_all if 'Recombination' in image]
     else:
@@ -35,6 +36,8 @@ def extract_images_from_dir(path, comb):
 ## for online purpose
 ## loading query image
 
+from dqlib.imutils import rgb2gray
+
 def extract_normal_features(images):
     '''
     '''
@@ -45,29 +48,36 @@ def extract_normal_features(images):
                          image_loaded.shape[1]),
                          dtype=np.float32)
     
+
     for index, image in enumerate(images):
+
         rgb_image = mpimg.imread(image)
+        print(rgb_image.shape)
+        
         gray_image = rgb2gray(rgb_image)
-        nor_image = (gray_image.astype(float) - 255 /2) / 255
+        nor_image = (gray_image.astype(float) - 255/2) / 255
+        
         
         dataset[index,:,:] = nor_image
         
     return dataset
 
 
-# from imutils import rgb2gray
+
 
 def load_queries(path):
     '''
     '''
     dataset_all = []
     for angle_dir in [x for x in os.listdir(path) if os.path.isdir(os.path.join(path, x))]:
-        # print angle_dir
+        print(angle_dir)
         images = extract_images_from_dir(os.path.join(path, angle_dir), comb=False)
+        # print(images)
         # normalize the image
         dataset = extract_normal_features(images)
         # 
-        dataset_all.append(dataset.reshape(dataset.shape[0], dataset.shape[1]*dataset.shape[2]))
+        #dataset_all.append(dataset.reshape(dataset.shape[0], dataset.shape[1]*dataset.shape[2]))
+        dataset_all.append(dataset)
         
     dataset_final = np.concatenate(dataset_all)
     

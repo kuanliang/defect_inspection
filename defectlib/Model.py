@@ -7,7 +7,7 @@ from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import KFold
 from sklearn.model_selection import train_test_split
 
-from Transform import keras_transform
+from defectlib.Transform import keras_transform
 
 from sklearn.metrics import log_loss
 from sklearn.metrics import accuracy_score
@@ -69,7 +69,7 @@ def make_model(nb_classes, image_dim_ordering='tf', input_shape = (128, 128)):
     
     return model
     
-def train_model(model, (train_data, train_label), (val_data, val_label), nb_epoch=10, batch_size=30):
+def train_model(model, train_data, train_label, val_data, val_label, nb_epoch=10, batch_size=30):
     '''
     '''
     model.fit(train_data, train_label, batch_size=batch_size, nb_epoch=nb_epoch,
@@ -129,9 +129,9 @@ def GroupKFold_modeling(tensors, labels, sn, nb_classes, batch_size=30, nb_epoch
         
         label_val = set(labels[test_index])
         sn_val = set(sn_only[test_index])
-        print 'Model {}'.format(nb_model)
-        print 'the label of validation image: {}'.format(list(label_val)[0])
-        print 'the s/n of validation image: {}'.format(list(sn_val)[0])
+        print('Model {}'.format(nb_model))
+        print('the label of validation image: {}'.format(list(label_val)[0]))
+        print('the s/n of validation image: {}'.format(list(sn_val)[0]))
         # plt.imshow(tensors[test_index][0])
         tensors_k, labels_k = keras_transform(tensors, labels)
         tensors_train, labels_train = tensors_k[train_index], labels_k[train_index]
@@ -156,7 +156,7 @@ def GroupKFold_modeling(tensors, labels, sn, nb_classes, batch_size=30, nb_epoch
         # if the class is not normal
         escape_rate = len(np.where(predictions_val_class == 0)[0]) / float(len(predictions_val_class))
         if list(label_val)[0] != 0:
-            print 'Escape rate: {}'.format(escape_rate)
+            print('Escape rate: {}'.format(escape_rate))
         
         accuracy_dict[list(label_val)[0]] += accuracy
         logloss_dict[list(label_val)[0]] += score
@@ -287,7 +287,7 @@ def train_svm_classifier(features, labels, sns, model_output_path, split=True):
     
     '''
     if split:
-        print 'train test split == True'
+        print('train test split == True')
         X_train, X_test, y_train, y_test = train_test_split(features, labels)
     else:
         X_train = features
@@ -329,6 +329,6 @@ def train_svm_classifier(features, labels, sns, model_output_path, split=True):
     print(confusion_matrix(y_test, y_predict, labels=labels))
     
     print("\nClassification report:")
-    print classification_report(y_test, y_predict)
+    print(classification_report(y_test, y_predict))
     
     return clf
